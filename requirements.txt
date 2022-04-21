@@ -28,5 +28,5 @@ django-celery-beat
 # Telegram
 python-telegram-bot
 
-# monitoring
-# sentry-sdk
+# Nodes
+paramiko
