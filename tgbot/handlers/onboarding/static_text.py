@@ -1,7 +1,9 @@
 start_created = "Sup, {first_name}!"
 start_not_created = "Welcome back, {first_name}!"
-unlock_secret_room = "Congratulations! You've opened a secret room👁‍🗨. There is some information for you:\n" \
-           "<b>Users</b>: {user_count}\n" \
-           "<b>24h active</b>: {active_24}"
-github_button_text = "GitHub"
-secret_level_button_text = "Secret level🗝"
+check_now_button_text = "Check now"
+add_checker_button_text = "Add node"
+delete_checker_button_text = "Delete node"
+add_checker_support_text = 'Write down here: "/add {node_type} {node_ip} {node_port}"'
+delete_checker_support_text = 'Write down here: "/delete {node_number}"'
+add_checker_wrong_len_text = 'Wrong parameters count, "/add {node_type} {node_ip} {node_port}"'
+delete_checker_wrong_len_text = 'Wrong parameters count, "/delete {node_number}"'
