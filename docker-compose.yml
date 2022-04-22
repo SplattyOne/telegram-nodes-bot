@@ -11,6 +11,9 @@ services:
       - "8777:8777"
     env_file:
       - ./.env
+    depends_on:
+      - Redis
+      - postgresql14
   bot:
     build: .
     container_name: dtb_bot
@@ -19,6 +22,8 @@ services:
       - ./.env
     depends_on:
       - web
+      - Redis
+      - postgresql14
   celery:
     build: .
     container_name: dtb_celery
@@ -29,6 +34,8 @@ services:
       - ./.env
     depends_on:
       - web
+      - Redis
+      - postgresql14
   celery-beat:
     build: .
     container_name: dtb_beat
@@ -40,3 +47,5 @@ services:
     depends_on:
       - celery
       - web
+      - Redis
+      - postgresql14

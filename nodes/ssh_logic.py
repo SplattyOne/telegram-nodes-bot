@@ -1,44 +1,79 @@
 import paramiko
+import re
 from time import sleep
 
 
-def serverScreenCommand(command, server, username,password,screenid):
+class SSHConnector():
+    client = None
+    channel = None
 
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(server, username=username, password=password)
-    channel = client.get_transport().open_session()
-    channel.resize_pty(width=10, height = 1, width_pixels =0, height_pixels =0)
-    channel.get_pty()
-    channel.settimeout(20)
-    
-    #channel.exec_command('screen -list')
-    #print(channel.recv(2048).decode('utf-8'))
-    
-    screenTMP = 'screen -dr ' + screenid
-    print(screenTMP)
-    
-    channel.exec_command(screenTMP)
-    channel.send(command + '\n')
-    
-    print(channel.recv_ready())
-    sleep(2)
-    print(channel.recv_ready())
-    
-    result = channel.recv(1024).decode('utf8') 
-     
-    channel.close()
-    client.close()
-    #print(result)
-    return(result)
-    
-def massaCleanOutput(outputraw):
-    start = outputraw.index('do not share your private key')
-    outputraw2 = outputraw[start:len(outputraw)]
-    start = outputraw2.index('Public key:')
-    end = outputraw2.index('=====') #len(result)
-    #print(start, end)
-    
-    return(outputraw2[start:end])
+    def __init__(self, host, username, password) -> None:
+        self.username = username
+        self.password = password
+        self.host = host
+        self.client = paramiko.SSHClient()
+        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-# my = massaCleanOutput(serverScreenCommand('wallet_info', '144.91.71.157', 'root','q27KCcASSGtoeKl6O7a2O6w', '7022'))
+        self.first_cmd_flag = False
+        self.sudo_flag = False
+        self.screen_flag = False
+
+    def connect(self) -> None:
+        self.client.connect(self.host, username=self.username, password=self.password)
+        self.channel = self.client.get_transport().open_session()
+        self.channel.get_pty()
+        self.channel.settimeout(30)
+
+    def send_command(self, cmd) -> None:
+        if not self.first_cmd_flag:
+            self.first_cmd_flag = True
+            self.connect()
+            self.channel.exec_command(cmd)
+            self.wait_ready()
+        else:
+            self.channel.send(cmd + '\n')
+            self.wait_ready()
+
+    def wait_ready(self) -> None:
+        sleep(1)
+        while not self.channel.recv_ready():
+            sleep(1)
+
+    def enter_sudo(self) -> None:
+        if self.sudo_flag:
+            return
+        self.send_command(f'sudo su')
+        self.send_command(self.password)
+        self.sudo_flag = True
+
+    def enter_screen(self, screen) -> None:
+        if self.screen_flag:
+            return
+        self.send_command(f'screen -dr {screen}')
+        self.screen_flag = True
+
+    def exec_commands(self, cmds, screen=False, sudo=False) -> str:
+        if sudo:
+            self.enter_sudo()
+        if screen:
+            self.enter_screen(screen)
+
+        for cmd in cmds:
+            self.send_command(cmd)
+        return self.parse_answer(self.channel.recv(9999).decode())
+
+    @staticmethod
+    def parse_answer(answer):
+        ansi_escape = re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
+        answer_parsed = ansi_escape.sub('', answer)
+
+        answer_lines = []
+        for l in answer_parsed.split('\n'):
+            answer_lines += l.split('\r')
+        return list(filter(lambda x: x, answer_lines))
+
+    def __del__(self) -> None:
+        if self.channel:
+            self.channel.close()
+        if self.client:
+            self.client.close()

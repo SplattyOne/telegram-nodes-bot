@@ -1,6 +1,3 @@
-import datetime
-
-from django.utils import timezone
 from telegram import ParseMode, Update
 from telegram.ext import CallbackContext
 
@@ -9,7 +6,7 @@ from tgbot.handlers.utils.info import extract_user_data_from_update
 from tgbot.models import User
 from tgbot.handlers.onboarding.keyboards import make_keyboard_for_start_command
 
-from nodes.logic import check_nodes, create_user_node, delete_user_node, NODE_TYPES
+from nodes.logic import check_nodes, list_nodes, create_user_node, delete_user_node
 
 
 def command_start(update: Update, context: CallbackContext) -> None:
@@ -28,6 +25,14 @@ def check_nodes_now(update: Update, context: CallbackContext) -> None:
     # user_id = extract_user_data_from_update(update)['user_id']
     u = User.get_user(update, context)
     user_id = u.user_id
+
+    context.bot.edit_message_text(
+        text='Loading...',
+        chat_id=user_id,
+        message_id=update.callback_query.message.message_id,
+        parse_mode=ParseMode.HTML
+    )
+
     text = check_nodes(user_id)
 
     context.bot.edit_message_text(
@@ -43,6 +48,30 @@ def check_nodes_now_cmd(update: Update, context: CallbackContext) -> None:
     u = User.get_user(update, context)
     user_id = u.user_id
     text = check_nodes(user_id)
+
+    update.message.reply_text(text=text, parse_mode=ParseMode.HTML)
+
+
+def list_nodes_now(update: Update, context: CallbackContext) -> None:
+    # user_id = extract_user_data_from_update(update)['user_id']
+    u = User.get_user(update, context)
+    user_id = u.user_id
+
+    text = list_nodes(user_id)
+
+    context.bot.edit_message_text(
+        text=text,
+        chat_id=user_id,
+        message_id=update.callback_query.message.message_id,
+        parse_mode=ParseMode.HTML
+    )
+
+
+def list_nodes_now_cmd(update: Update, context: CallbackContext) -> None:
+    # user_id = extract_user_data_from_update(update)['user_id']
+    u = User.get_user(update, context)
+    user_id = u.user_id
+    text = list_nodes(user_id)
 
     update.message.reply_text(text=text, parse_mode=ParseMode.HTML)
 
@@ -71,10 +100,10 @@ def delete_node_checker_cmd(update: Update, context: CallbackContext) -> None:
 
 def add_node_checker(update: Update, context: CallbackContext) -> None:
     user_id = extract_user_data_from_update(update)['user_id']
-    text = static_text.add_checker_support_text + f'\n{NODE_TYPES.keys()}'
+    text = static_text.add_checker_support_text
 
     context.bot.edit_message_text(
-        text=static_text.add_checker_support_text,
+        text=text,
         chat_id=user_id,
         message_id=update.callback_query.message.message_id,
         parse_mode=ParseMode.HTML
@@ -83,9 +112,21 @@ def add_node_checker(update: Update, context: CallbackContext) -> None:
 def add_node_checker_cmd(update: Update, context: CallbackContext) -> None:
     user_id = extract_user_data_from_update(update)['user_id']
     new_node_data = update.message.text.split(' ')
-    if len(new_node_data) != 4:
+    if len(new_node_data) == 4:
+        node_type = new_node_data[1]
+        node_ip = new_node_data[2]
+        node_port = new_node_data[3]
+        update.message.reply_text(text=create_user_node(user_id, node_type, node_ip, node_port=node_port), parse_mode=ParseMode.HTML)
+    elif len(new_node_data) >= 5 and len(new_node_data) <=7:
+        node_type = new_node_data[1]
+        node_ip = new_node_data[2]
+        ssh_username = new_node_data[3]
+        ssh_password = new_node_data[4]
+        screen_name = new_node_data[5] if len(new_node_data) > 5 else None
+        sudo_flag = new_node_data[6] if len(new_node_data) > 6 else False
+        update.message.reply_text(text=create_user_node(user_id, node_type, node_ip, screen_name=screen_name, \
+            ssh_username=ssh_username, ssh_password=ssh_password, sudo_flag=sudo_flag), parse_mode=ParseMode.HTML)
+    else:
         update.message.reply_text(text=static_text.add_checker_wrong_len_text, parse_mode=ParseMode.HTML)
-        return
     
-    (cmd, node_type, node_ip, node_port) = new_node_data
-    update.message.reply_text(text=create_user_node(user_id, node_type, node_ip, node_port), parse_mode=ParseMode.HTML)
+    

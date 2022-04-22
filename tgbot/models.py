@@ -74,22 +74,3 @@ class User(CreateUpdateTracker):
             return f'@{self.username}'
         return f"{self.first_name} {self.last_name}" if self.last_name else f"{self.first_name}"
 
-
-class Location(CreateTracker):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    latitude = models.FloatField()
-    longitude = models.FloatField()
-
-    objects = GetOrNoneManager()
-
-    def __str__(self):
-        return f"user: {self.user}, created at {self.created_at.strftime('(%H:%M, %d %B %Y)')}"
-
-    def save(self, *args, **kwargs):
-        super(Location, self).save(*args, **kwargs)
-        # Parse location with arcgis
-        from arcgis.tasks import save_data_from_arcgis
-        if DEBUG:
-            save_data_from_arcgis(latitude=self.latitude, longitude=self.longitude, location_id=self.pk)
-        else:
-            save_data_from_arcgis.delay(latitude=self.latitude, longitude=self.longitude, location_id=self.pk)
