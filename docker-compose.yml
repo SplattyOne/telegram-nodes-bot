@@ -11,7 +11,7 @@ services:
       - "8777:8777"
     env_file:
       - ./.env
-    depends_on:
+    external_links:
       - Redis
       - postgresql14
   bot:
@@ -22,6 +22,7 @@ services:
       - ./.env
     depends_on:
       - web
+    external_links:
       - Redis
       - postgresql14
   celery:
@@ -34,6 +35,7 @@ services:
       - ./.env
     depends_on:
       - web
+    external_links:
       - Redis
       - postgresql14
   celery-beat:
@@ -47,5 +49,6 @@ services:
     depends_on:
       - celery
       - web
+    external_links:
       - Redis
       - postgresql14
