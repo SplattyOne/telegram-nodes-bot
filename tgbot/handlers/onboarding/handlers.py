@@ -6,7 +6,7 @@ from tgbot.handlers.utils.info import extract_user_data_from_update
 from tgbot.models import User
 from tgbot.handlers.onboarding.keyboards import make_keyboard_for_start_command
 
-from nodes.logic import check_nodes, list_nodes, create_user_node, delete_user_node
+from nodes.logic import check_nodes_cached, list_nodes, create_user_node, delete_user_node
 
 
 def command_start(update: Update, context: CallbackContext) -> None:
@@ -33,7 +33,7 @@ def check_nodes_now(update: Update, context: CallbackContext) -> None:
         parse_mode=ParseMode.HTML
     )
 
-    text = check_nodes(user_id)
+    text = check_nodes_cached(user_id)
 
     context.bot.edit_message_text(
         text=text,
@@ -47,7 +47,7 @@ def check_nodes_now_cmd(update: Update, context: CallbackContext) -> None:
     # user_id = extract_user_data_from_update(update)['user_id']
     u = User.get_user(update, context)
     user_id = u.user_id
-    text = check_nodes(user_id)
+    text = check_nodes_cached(user_id)
 
     update.message.reply_text(text=text, parse_mode=ParseMode.HTML)
 

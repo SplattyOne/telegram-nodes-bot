@@ -14,10 +14,12 @@ class Node(models.Model):
     sudo_flag = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     last_checked = models.DateTimeField(null=True, blank=True)
-    last_status = models.CharField(null=True, blank=True, max_length=1024)
+    last_status = models.BooleanField(default=False)
+    last_status_text = models.CharField(null=True, blank=True, max_length=2048)
 
 
 class CheckHistory(models.Model):
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
     checked = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=1024)
+    status = models.BooleanField(default=False)
+    status_text = models.CharField(null=True, blank=True, max_length=2048)

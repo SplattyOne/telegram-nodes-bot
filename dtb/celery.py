@@ -1,5 +1,6 @@
 import os
 from celery import Celery
+from celery.schedules import crontab
 
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dtb.settings')
@@ -15,5 +16,16 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
 app.conf.enable_utc = False
+
+app.conf.beat_schedule = {
+    'check-nodes-every-five-minutes': {
+        'task': 'nodes.tasks.check_nodes_task',
+        'schedule': crontab(minute='*/5'),  # change to `crontab(minute=0, hour=0)` if you want it to run daily at midnight
+    },
+    # 'print-nodes-at-8-00': {
+    #     'task': 'nodes.tasks.check_nodes_task',
+    #     'schedule': crontab(hour=8, minute=0),  # change to `crontab(minute=0, hour=0)` if you want it to run daily at midnight
+    # },
+}
 
     

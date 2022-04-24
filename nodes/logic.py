@@ -4,8 +4,11 @@ import requests
 import json
 import traceback
 
+from django.utils import timezone
+
 from nodes.ssh_logic import SSHConnector
 from nodes.models import Node, CheckHistory
+from tgbot.handlers.broadcast_message.utils import _send_message
 
 
 MAX_ERROR_LEN = 50
@@ -76,9 +79,9 @@ class AptosNodeChecker(BaseNodeCheckerAPI):
 
     def parse_unique_answer(self, answer):
         sync_lines = list(filter(lambda x: 'aptos_state_sync_version' in x, answer.split('\n')))
-        target_block = list(filter(lambda x: 'target' in x, sync_lines))[0].split(' ')[1]
-        synced_block = list(filter(lambda x: 'synced' in x, sync_lines))[0].split(' ')[1]
-        if int(target_block) - int(synced_block) > 3:
+        target_block = list(filter(lambda x: 'target' in x, sync_lines))[0].split(' ')[-1]
+        synced_block = list(filter(lambda x: 'synced' in x, sync_lines))[0].split(' ')[-1]
+        if int(target_block) - int(synced_block) > 6:
             return (False, f'Something wrong in sync process, target {target_block}, synced {synced_block}')
         return (True, f'Node is OK, target {target_block}, synced {synced_block}')
 
@@ -134,8 +137,11 @@ NODE_TYPES = {
 
 def check_nodes(user_id):
     nodes_status = ''
-    user_nodes = Node.objects.filter(user_id=user_id)
+    nodes_status_changed = ''
+    user_nodes = Node.objects.filter(user_id=user_id).order_by('-created')
+
     for index, node in enumerate(user_nodes):
+        # Get node type checker
         node_context = NODE_TYPES.get(node.node_type)
         if node_context['checker'] == CHECKER_API_CLASS:
             checker = node_context['class'](node.node_ip, node.node_port)
@@ -143,13 +149,51 @@ def check_nodes(user_id):
         else:
             checker = node_context['class'](node.node_ip, node.ssh_username, node.ssh_password, node.screen_name, node.sudo_flag)
             node_description = f'{node.node_ip}@{node.ssh_username}'
-        nodes_status += f'{index+1}. {node.node_type} {node_description} {checker.health_check()}\n'
+        
+        # Check node status
+        node_status = checker.health_check()
+        nodes_status += f'{index+1}. {node.node_type} {node_description} {node_status}\n'
+
+        # Check if notify user need
+        if node.last_status != node_status[0]:
+            nodes_status_changed += f'{index+1}. {node.node_type} {node_description} {node_status}\n'
+
+        # Save node history status
+        node_history = CheckHistory(node=node, status=node_status[0], status_text=node_status[1])
+        node_history.save()
+
+        # Save node satus
+        node.last_checked = node_history.checked
+        node.last_status = node_status[0]
+        node.last_status_text = node_status[1]
+        node.save()
+
+    if nodes_status_changed:
+        _send_message(user_id=user_id, text=f'Nodes status changed!\n{nodes_status_changed}')
+
+    return nodes_status or 'No node exists'
+
+
+def check_nodes_cached(user_id):
+    nodes_status = ''
+    user_nodes = Node.objects.filter(user_id=user_id).order_by('-created')
+    for index, node in enumerate(user_nodes):
+        node_context = NODE_TYPES.get(node.node_type)
+        if node_context['checker'] == CHECKER_API_CLASS:
+            node_description = f'{node.node_ip}:{node.node_port}'
+        else:
+            node_description = f'{node.node_ip}@{node.ssh_username}'
+        node_status = (node.last_status, node.last_status_text)
+        last_checked = 'Never checked'
+        if node.last_checked:
+            last_checked = 'Checked on ' + timezone.localtime(node.last_checked).strftime('%Y-%d-%m %H:%M')
+        nodes_status += f'{index+1}. {node.node_type} {node_description} {node_status} {last_checked}\n '
     return nodes_status or 'No node exists'
 
 
 def list_nodes(user_id):
     nodes_status = ''
-    user_nodes = Node.objects.filter(user_id=user_id)
+    user_nodes = Node.objects.filter(user_id=user_id).order_by('-created')
     for index, node in enumerate(user_nodes):
         nodes_status += f'{index+1}. {node.node_type}: {node.node_ip}:{node.node_port}, {node.ssh_username}/{node.ssh_password} (screen {node.screen_name}, sudo {node.sudo_flag})\n'
     return nodes_status or 'No node exists'
@@ -191,7 +235,7 @@ def create_user_node(user_id, node_type, node_ip, node_port=None, ssh_username=N
 
 
 def delete_user_node(user_id, node_number):
-    user_nodes = Node.objects.filter(user_id=user_id)
+    user_nodes = Node.objects.filter(user_id=user_id).order_by('-created')
     deleted_node = 'No node deleted'
     for index, node in enumerate(user_nodes):
         if str(index + 1) == node_number:
