@@ -215,13 +215,14 @@ def check_nodes_cached(user_id):
             node_description = f'{node.node_ip}@{node.ssh_username}'
         node_status = (node.last_status, node.last_status_text)
         if node.last_checked and checked_dt != node.last_checked:
+            checked_dt = node.last_checked
             nodes_status += 'Checked on ' + timezone.localtime(node.last_checked).strftime('%Y-%m-$d %H:%M') + ':\n'
         if not node.node_type in node_rewards:
             node_rewards[node.node_type] = 0
         node_rewards[node.node_type] += node.last_reward_value
         nodes_status += f'{index+1}. {node.node_type} {node_description} {node_status}\n '
     if len(node_rewards):
-        node_status = node_status + '\n\nAll metrics: ' + str(node_rewards)
+        nodes_status = nodes_status + '\n\nAll metrics: ' + str(node_rewards)
     return nodes_status or 'No node exists'
 
 
