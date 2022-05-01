@@ -177,7 +177,7 @@ def check_nodes(user_id):
         node_status_full = checker.health_check()
         status = node_status_full[0]
         status_text = node_status_full[1]
-        reward_value = int(node_status_full[2]) if len(node_status_full) > 1 else 0
+        reward_value = float(node_status_full[2]) if len(node_status_full) > 1 else 0
 
         nodes_status += f'{index+1}. {node.node_type} {node_description} ({status}, {status_text})\n'
 
@@ -218,7 +218,7 @@ def check_nodes_cached(user_id):
             nodes_status += 'Checked on ' + timezone.localtime(node.last_checked).strftime('%Y-%m-$d %H:%M') + ':\n'
         if not node.node_type in node_rewards:
             node_rewards[node.node_type] = 0
-        node_rewards[node.node_type] += node.reward_value
+        node_rewards[node.node_type] += node.last_reward_value
         nodes_status += f'{index+1}. {node.node_type} {node_description} {node_status}\n '
     if len(node_rewards):
         node_status = node_status + '\n\nAll metrics: ' + str(node_rewards)
