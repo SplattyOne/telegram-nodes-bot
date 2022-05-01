@@ -79,11 +79,22 @@ class AptosNodeChecker(BaseNodeCheckerAPI):
 
     def parse_unique_answer(self, answer):
         sync_lines = list(filter(lambda x: 'aptos_state_sync_version' in x, answer.split('\n')))
-        target_block = list(filter(lambda x: 'target' in x, sync_lines))[0].split(' ')[-1]
-        synced_block = list(filter(lambda x: 'synced' in x, sync_lines))[0].split(' ')[-1]
-        if int(target_block) - int(synced_block) > 6:
-            return (False, f'Something wrong in sync process, target {target_block}, synced {synced_block}')
-        return (True, f'Node is OK, target {target_block}, synced {synced_block}')
+        if not len(sync_lines):
+            return (False, f'Wrong aptos_state_sync_version reply')
+        
+        target_block_find = list(filter(lambda x: 'applied_transaction_outputs' in x, sync_lines))
+        if not len(target_block_find):
+            return (False, f'Wrong aptos_state_sync_version applied reply')
+        target_block = target_block_find[0].split(' ')[-1]
+
+        synced_block_find = list(filter(lambda x: 'synced' in x, sync_lines))
+        if not len(synced_block_find):
+            return (False, f'Wrong aptos_state_sync_version synced reply')
+        synced_block = synced_block_find[0].split(' ')[-1]
+
+        if abs(int(target_block) - int(synced_block)) > 6:
+            return (False, f'Something wrong in sync process, applied {target_block}, synced {synced_block}')
+        return (True, f'Node is OK, applied {target_block}, synced {synced_block}', 0)
 
 
 class MinimaNodeChecker(BaseNodeCheckerAPI):
@@ -101,7 +112,7 @@ class MinimaNodeChecker(BaseNodeCheckerAPI):
         rewards += response_rewards.get('previousRewards', 0)
         rewards += response_rewards.get('communityRewards', 0)
         rewards += response_rewards.get('inviterRewards', 0)
-        return (True, f'Node is OK, rewards: {rewards}')
+        return (True, f'Node is OK, rewards: {rewards}', rewards)
 
 
 class MassaNodeChecker(BaseNodeCheckerSSH):
@@ -111,14 +122,26 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
         super().__init__(ip, username, password, screen, sudo)
 
     def parse_unique_answer(self, answer):
-        active_nodes = list(filter(lambda x: 'Active nodes:' in x, answer[::-1]))[0].split(' ')[2]
-        active_rolls = list(filter(lambda x: 'Active rolls:' in x, answer[::-1]))[0].split(' ')[2]
-        balance = list(filter(lambda x: 'Final balance:' in x, answer[::-1]))[0].split(' ')[2]
+        active_nodes_find = list(filter(lambda x: 'Active nodes:' in x, answer[::-1]))
+        if not len(active_nodes_find):
+            return (False, f'Wrong active nodes reply')
+        active_nodes = active_nodes_find[0].split(' ')[-1]
+        
+        active_rolls_find = list(filter(lambda x: 'Active rolls:' in x, answer[::-1]))
+        if not len(active_rolls_find):
+            return (False, f'Wrong active rolls reply')
+        active_rolls = active_rolls_find[0].split(' ')[-1]
+
+        balance_find = list(filter(lambda x: 'Final balance:' in x, answer[::-1]))
+        if not len(balance):
+            return (False, f'Wrong balance reply')
+        balance = balance_find[0].split(' ')[-1]
+
         if int(active_rolls) < 1:
             return (False, f'Wrong active rolls count {active_rolls}')
         if int(active_nodes) < 1:
             return (False, f'Wrong active nodes count {active_nodes}')
-        return (True, f'Node is OK, nodes: {active_nodes}, rolls: {active_rolls}, balance: {balance}')
+        return (True, f'Node is OK, nodes: {active_nodes}, rolls: {active_rolls}, balance: {balance}', balance)
 
 
 CHECKER_API_CLASS = 'api'
@@ -151,21 +174,26 @@ def check_nodes(user_id):
             node_description = f'{node.node_ip}@{node.ssh_username}'
         
         # Check node status
-        node_status = checker.health_check()
-        nodes_status += f'{index+1}. {node.node_type} {node_description} {node_status}\n'
+        node_status_full = checker.health_check()
+        status = node_status_full[0]
+        status_text = node_status_full[1]
+        reward_value = int(node_status_full[2]) if len(node_status_full) > 1 else 0
+
+        nodes_status += f'{index+1}. {node.node_type} {node_description} ({status}, {status_text})\n'
 
         # Check if notify user need
-        if node.last_status != node_status[0]:
-            nodes_status_changed += f'{index+1}. {node.node_type} {node_description} {node_status}\n'
+        if node.last_status != status:
+            nodes_status_changed += f'{index+1}. {node.node_type} {node_description} ({status}, {status_text})\n'
 
         # Save node history status
-        node_history = CheckHistory(node=node, status=node_status[0], status_text=node_status[1])
+        node_history = CheckHistory(node=node, status=status, status_text=status_text, reward_value=reward_value)
         node_history.save()
 
         # Save node satus
         node.last_checked = node_history.checked
-        node.last_status = node_status[0]
-        node.last_status_text = node_status[1]
+        node.last_status = status
+        node.last_status_text = status_text
+        node.last_reward_value = reward_value
         node.save()
 
     if nodes_status_changed:
@@ -176,6 +204,8 @@ def check_nodes(user_id):
 
 def check_nodes_cached(user_id):
     nodes_status = ''
+    checked_dt = None
+    node_rewards = {}
     user_nodes = Node.objects.filter(user_id=user_id).order_by('-created')
     for index, node in enumerate(user_nodes):
         node_context = NODE_TYPES.get(node.node_type)
@@ -184,10 +214,14 @@ def check_nodes_cached(user_id):
         else:
             node_description = f'{node.node_ip}@{node.ssh_username}'
         node_status = (node.last_status, node.last_status_text)
-        last_checked = 'Never checked'
-        if node.last_checked:
-            last_checked = 'Checked on ' + timezone.localtime(node.last_checked).strftime('%Y-%d-%m %H:%M')
-        nodes_status += f'{index+1}. {node.node_type} {node_description} {node_status} {last_checked}\n '
+        if node.last_checked and checked_dt != node.last_checked:
+            nodes_status += 'Checked on ' + timezone.localtime(node.last_checked).strftime('%Y-%m-$d %H:%M') + ':\n'
+        if not node.node_type in node_rewards:
+            node_rewards[node.node_type] = 0
+        node_rewards[node.node_type] += node.reward_value
+        nodes_status += f'{index+1}. {node.node_type} {node_description} {node_status}\n '
+    if len(node_rewards):
+        node_status = node_status + '\n\nAll metrics: ' + str(node_rewards)
     return nodes_status or 'No node exists'
 
 

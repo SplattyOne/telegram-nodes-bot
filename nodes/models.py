@@ -16,6 +16,7 @@ class Node(models.Model):
     last_checked = models.DateTimeField(null=True, blank=True)
     last_status = models.BooleanField(default=False)
     last_status_text = models.CharField(null=True, blank=True, max_length=2048)
+    last_reward_value = models.IntegerField(default=0)
 
 
 class CheckHistory(models.Model):
@@ -23,3 +24,4 @@ class CheckHistory(models.Model):
     checked = models.DateTimeField(auto_now_add=True)
     status = models.BooleanField(default=False)
     status_text = models.CharField(null=True, blank=True, max_length=2048)
+    reward_value = models.IntegerField(default=0)
