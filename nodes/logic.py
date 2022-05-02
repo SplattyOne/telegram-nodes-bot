@@ -217,7 +217,7 @@ def check_nodes_cached(user_id):
         node_status = (node.last_status, node.last_status_text)
         if node.last_checked and checked_dt != node.last_checked.replace(microsecond=0, second=0):
             checked_dt = node.last_checked.replace(microsecond=0, second=0)
-            nodes_status += 'Checked on ' + timezone.localtime(node.last_checked).strftime('%Y-%m-%d %H:%M') + ':\n'
+            nodes_status += 'Checked at ' + timezone.localtime(node.last_checked).strftime('%Y-%m-%d %H:%M') + ':\n'
         if not node.node_type in node_rewards:
             node_rewards[node.node_type] = 0
         node_rewards[node.node_type] += node.last_reward_value
