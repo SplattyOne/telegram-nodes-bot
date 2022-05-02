@@ -178,7 +178,7 @@ def check_nodes(user_id):
         node_status_full = checker.health_check()
         status = node_status_full[0]
         status_text = node_status_full[1]
-        reward_value = float(node_status_full[2]) if len(node_status_full) > 1 else 0
+        reward_value = float(node_status_full[2]) if len(node_status_full) > 2 else 0
 
         nodes_status += f'{index+1}. {node.node_type} {node_description} ({status}, {status_text})\n'
 
