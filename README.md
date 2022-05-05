@@ -1,4 +1,7 @@
 # django-telegram-bot
+Nodes check supported: Massa (by ssh command), Aptos (by api), Minima (by api).
+
+# django-telegram-bot
 Sexy Django + python-telegram-bot + Celery + Redis + Postgres + Dokku + GitHub Actions template. Production-ready Telegram bot with database, admin panel and a bunch of useful built-in methods.
 
 [![Sparkline](https://stars.medv.io/Naereen/badges.svg)](https://stars.medv.io/Naereen/badges)
