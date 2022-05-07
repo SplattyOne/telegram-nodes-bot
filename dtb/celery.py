@@ -22,10 +22,10 @@ app.conf.beat_schedule = {
         'task': 'nodes.tasks.check_nodes_task',
         'schedule': crontab(minute='*/5'),  # change to `crontab(minute=0, hour=0)` if you want it to run daily at midnight
     },
-    # 'print-nodes-at-8-00': {
-    #     'task': 'nodes.tasks.check_nodes_task',
-    #     'schedule': crontab(hour=8, minute=0),  # change to `crontab(minute=0, hour=0)` if you want it to run daily at midnight
-    # },
+    'send-nodes-at-9-00': {
+        'task': 'nodes.tasks.send_nodes_status_task',
+        'schedule': crontab(hour=9, minute=0),  # change to `crontab(minute=0, hour=0)` if you want it to run daily at midnight
+    },
 }
 
     

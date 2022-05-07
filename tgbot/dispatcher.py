@@ -20,7 +20,7 @@ from tgbot.handlers.utils import files, error
 from tgbot.handlers.admin import handlers as admin_handlers
 from tgbot.handlers.onboarding import handlers as onboarding_handlers
 # from tgbot.handlers.broadcast_message import handlers as broadcast_handlers
-from tgbot.handlers.onboarding.manage_data import ADD_CHECKER_BUTTON, DELETE_CHECKER_BUTTON, CHECK_NOW_BUTTON, LIST_CHECKERS_BUTTON
+from tgbot.handlers.onboarding.manage_data import ADD_CHECKER_BUTTON, CHECK_CACHED_BUTTON, DELETE_CHECKER_BUTTON, CHECK_NOW_BUTTON, LIST_CHECKERS_BUTTON
 # from tgbot.handlers.broadcast_message.manage_data import CONFIRM_DECLINE_BROADCAST
 # from tgbot.handlers.broadcast_message.static_text import broadcast_command
 
@@ -31,7 +31,8 @@ def setup_dispatcher(dp):
     """
     # onboarding
     dp.add_handler(CommandHandler("start", onboarding_handlers.command_start))
-    dp.add_handler(CommandHandler("check", onboarding_handlers.check_nodes_now_cmd))
+    dp.add_handler(CommandHandler("check_cached", onboarding_handlers.check_nodes_cached_cmd))
+    dp.add_handler(CommandHandler("check_now", onboarding_handlers.check_nodes_now_cmd))
     dp.add_handler(CommandHandler("list", onboarding_handlers.list_nodes_now_cmd))
     dp.add_handler(CommandHandler("add", onboarding_handlers.add_node_checker_cmd))
     dp.add_handler(CommandHandler("delete", onboarding_handlers.delete_node_checker_cmd))
@@ -43,6 +44,7 @@ def setup_dispatcher(dp):
 
     # nodes
     dp.add_handler(CallbackQueryHandler(onboarding_handlers.check_nodes_now, pattern=f"^{CHECK_NOW_BUTTON}"))
+    dp.add_handler(CallbackQueryHandler(onboarding_handlers.check_nodes_cached, pattern=f"^{CHECK_CACHED_BUTTON}"))
     dp.add_handler(CallbackQueryHandler(onboarding_handlers.list_nodes_now, pattern=f"^{LIST_CHECKERS_BUTTON}"))
     dp.add_handler(CallbackQueryHandler(onboarding_handlers.add_node_checker, pattern=f"^{ADD_CHECKER_BUTTON}"))
     dp.add_handler(CallbackQueryHandler(onboarding_handlers.delete_node_checker, pattern=f"^{DELETE_CHECKER_BUTTON}"))
@@ -119,7 +121,8 @@ def set_up_commands(bot_instance: Bot) -> None:
     langs_with_commands: Dict[str, Dict[str, str]] = {
         'en': {
             'start': 'Start bot 🚀',
-            'check': 'Check all nodes 🚀',
+            'check_cached': 'Get all nodes statuses 🚀',
+            'check_now': 'Check all nodes statuses 🚀',
             'list': 'List all nodes 📊',
             'add': 'Add node for check 📊',
             'delete': 'Delete node for check 📊'

@@ -119,30 +119,32 @@ class MinimaNodeChecker(BaseNodeCheckerAPI):
 class MassaNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
-        self.cmds = ['wallet_info', 'get_status']
+        self.cmds = ['massa_node_info']
         super().__init__(ip, username, password, screen, sudo)
 
     def parse_unique_answer(self, answer):
-        active_nodes_find = list(filter(lambda x: 'Active nodes:' in x, answer[::-1]))
-        if not len(active_nodes_find):
+        active_nodes_in_find = list(filter(lambda x: 'Входящих подключений:' in x, answer[::-1]))
+        active_nodes_out_find = list(filter(lambda x: 'Исходящих подключений:' in x, answer[::-1]))
+        if not len(active_nodes_in_find) or not len(active_nodes_out_find):
             return (False, f'Wrong active nodes reply')
-        active_nodes = active_nodes_find[0].split(' ')[-1]
+        active_nodes_in = active_nodes_in_find[0].strip().split(' ')[-1]
+        active_nodes_out = active_nodes_out_find[0].strip().split(' ')[-1]
         
-        active_rolls_find = list(filter(lambda x: 'Active rolls:' in x, answer[::-1]))
+        active_rolls_find = list(filter(lambda x: 'Активные ROLL\'ы' in x, answer[::-1]))
         if not len(active_rolls_find):
             return (False, f'Wrong active rolls reply')
-        active_rolls = active_rolls_find[0].split(' ')[-1]
+        active_rolls = active_rolls_find[0].strip().split(' ')[-1]
 
-        balance_find = list(filter(lambda x: 'Final balance:' in x, answer[::-1]))
+        balance_find = list(filter(lambda x: 'Баланс:' in x, answer[::-1]))
         if not len(balance):
             return (False, f'Wrong balance reply')
-        balance = balance_find[0].split(' ')[-1]
+        balance = balance_find[0].strip().split(' ')[-1]
 
         if int(active_rolls) < 1:
             return (False, f'Wrong active rolls count {active_rolls}')
-        if int(active_nodes) < 1:
-            return (False, f'Wrong active nodes count {active_nodes}')
-        return (True, f'Node is OK, nodes: {active_nodes}, rolls: {active_rolls}, balance: {balance}', balance)
+        if int(active_nodes_in) + int(active_nodes_out) < 1:
+            return (False, f'Wrong active nodes count {active_nodes_in}/{active_nodes_out}')
+        return (True, f'Node is OK, nodes: {active_nodes_in}/{active_nodes_out}, rolls: {active_rolls}, balance: {balance}', balance)
 
 
 CHECKER_API_CLASS = 'api'
@@ -159,7 +161,7 @@ NODE_TYPES = {
 }
 
 
-def check_nodes(user_id):
+def check_nodes_now(user_id, send_changes=False):
     nodes_status = ''
     nodes_status_changed = ''
     user_nodes = Node.objects.filter(user_id=user_id).order_by('-created')
@@ -197,7 +199,7 @@ def check_nodes(user_id):
         node.last_reward_value = reward_value
         node.save()
 
-    if nodes_status_changed:
+    if send_changes and nodes_status_changed:
         _send_message(user_id=user_id, text=f'Nodes status changed!\n{nodes_status_changed}')
 
     return nodes_status or 'No node exists'
@@ -249,6 +251,7 @@ def create_user_node(user_id, node_type, node_ip, node_port=None, ssh_username=N
     if node_port is not None and (not node_port.isdigit() or int(node_port) < 0 or int(node_port) > 65535):
         return f'Wrong port number: {node_port}'
     sudo_flag = True if sudo_flag in ['True', 'true', 1, True] else False
+    screen_name = None if screen_name in ['False', 'false', 0, False, 'None', 'none'] else screen_name
     
     new_node = Node(user_id=user_id, node_type=node_type, node_ip=node_ip, \
         node_port=node_port, screen_name=screen_name, sudo_flag=sudo_flag, \
