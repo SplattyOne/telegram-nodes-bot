@@ -143,8 +143,8 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
         if int(active_rolls) < 1:
             return (False, f'Wrong active rolls count {active_rolls}')
         if int(active_nodes_in) + int(active_nodes_out) < 1:
-            return (False, f'Wrong active nodes count {active_nodes_in}/{active_nodes_out}')
-        return (True, f'Node is OK, nodes: {active_nodes_in}/{active_nodes_out}, rolls: {active_rolls}, balance: {balance}', balance)
+            return (False, f'Wrong active nodes count {active_nodes_in}(in) | {active_nodes_out}(out)')
+        return (True, f'Node is OK, nodes: {active_nodes_in}(in) | {active_nodes_out}(out), rolls: {active_rolls}, balance: {balance}', balance)
 
 
 CHECKER_API_CLASS = 'api'

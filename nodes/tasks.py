@@ -19,10 +19,11 @@ def check_nodes_task() -> None:
 
     for user in User.objects.all():
         try:
+            logger.info(f'Checking for {user.user_id}')
             check_nodes_now(user.user_id, send_changes=True)
-            logger.info(f"All node for user {user.user_id} checked")
+            logger.info(f"All nodes for user {user.user_id} checked")
         except Exception as e:
-            logger.error(f"Failed to check nodes for {user.user_id}, reason: {e}")
+            logger.error(f"Failed to check nodes, reason: {e}")
 
     logger.info("All nodes check finished!")
 
@@ -34,12 +35,12 @@ def send_nodes_status_task() -> None:
 
     for user in User.objects.all():
         try:
+            logger.info(f'Checking for {user.user_id}')
             nodes_statuses = check_nodes_cached(user.user_id)
-            _send_message(user_id=user.user_id, text=nodes_statuses)
             logger.info(f"Status for user {user.user_id} checked")
-            #
+            _send_message(user_id=user.user_id, text=nodes_statuses)
             logger.info(f"Status for user {user.user_id} sent")
         except Exception as e:
-            logger.error(f"Failed to check nodes for {user.user_id}, reason: {e}")
+            logger.error(f"Failed to check nodes, reason: {e}")
 
     logger.info("All nodes statuses sent!")

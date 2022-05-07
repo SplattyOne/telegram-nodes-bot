@@ -1,6 +1,10 @@
+from datetime import datetime, timedelta
 import paramiko
 import re
 from time import sleep
+
+
+MAX_COMMAND_WAIT = 10
 
 
 class SSHConnector():
@@ -29,14 +33,18 @@ class SSHConnector():
             self.first_cmd_flag = True
             self.connect()
             self.channel.exec_command(cmd)
-            self.wait_ready()
+            self.wait_ready(cmd)
         else:
             self.channel.send(cmd + '\n')
-            self.wait_ready()
+            self.wait_ready(cmd)
 
-    def wait_ready(self) -> None:
+    def wait_ready(self, cmd) -> None:
         sleep(3)
+        dt_start = datetime.now()
         while not self.channel.recv_ready():
+            dt_now = datetime.now()
+            if dt_start + timedelta(seconds=MAX_COMMAND_WAIT) < dt_now:
+                raise TimeoutError(f'Cannot execute command {cmd}, after {MAX_COMMAND_WAIT} seconds')
             sleep(1)
 
     def enter_sudo(self) -> None:
