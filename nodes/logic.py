@@ -119,7 +119,7 @@ class MinimaNodeChecker(BaseNodeCheckerAPI):
 class MassaNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
-        self.cmds = ['massa_node_info']
+        self.cmds = ['. <(wget -qO- https://raw.githubusercontent.com/SecorD0/Massa/main/insert_variables.sh)', 'massa_node_info']
         super().__init__(ip, username, password, screen, sudo)
 
     def parse_unique_answer(self, answer):

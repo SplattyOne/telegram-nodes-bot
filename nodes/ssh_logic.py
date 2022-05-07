@@ -35,7 +35,7 @@ class SSHConnector():
             self.wait_ready()
 
     def wait_ready(self) -> None:
-        sleep(1)
+        sleep(3)
         while not self.channel.recv_ready():
             sleep(1)
 
