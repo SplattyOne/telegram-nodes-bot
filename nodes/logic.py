@@ -136,7 +136,7 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
         active_rolls = active_rolls_find[0].strip().split(' ')[-1]
 
         balance_find = list(filter(lambda x: 'Баланс:' in x, answer[::-1]))
-        if not len(balance):
+        if not len(balance_find):
             return (False, f'Wrong balance reply')
         balance = balance_find[0].strip().split(' ')[-1]
 
