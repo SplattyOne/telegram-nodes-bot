@@ -119,32 +119,40 @@ class MinimaNodeChecker(BaseNodeCheckerAPI):
 class MassaNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
-        self.cmds = ['. <(wget -qO- https://raw.githubusercontent.com/SecorD0/Massa/main/insert_variables.sh)', 'massa_node_info']
+        # self.cmds = ['. <(wget -qO- https://raw.githubusercontent.com/SecorD0/Massa/main/insert_variables.sh)', 'massa_node_info']
+        self.cmds = ["cd ~/massa/massa-client", "./massa-client wallet_info"]
         super().__init__(ip, username, password, screen, sudo)
 
     def parse_unique_answer(self, answer):
-        active_nodes_in_find = list(filter(lambda x: 'Входящих подключений:' in x, answer[::-1]))
-        active_nodes_out_find = list(filter(lambda x: 'Исходящих подключений:' in x, answer[::-1]))
-        if not len(active_nodes_in_find) or not len(active_nodes_out_find):
-            return (False, f'Wrong active nodes reply')
-        active_nodes_in = active_nodes_in_find[0].strip().split(' ')[-1]
-        active_nodes_out = active_nodes_out_find[0].strip().split(' ')[-1]
+        # active_nodes_in_find = list(filter(lambda x: 'Входящих подключений:' in x, answer[::-1]))
+        # active_nodes_out_find = list(filter(lambda x: 'Исходящих подключений:' in x, answer[::-1]))
+        # if not len(active_nodes_in_find) or not len(active_nodes_out_find):
+        #     return (False, f'Wrong active nodes reply')
+        # active_nodes_in = active_nodes_in_find[0].strip().split(' ')[-1]
+        # active_nodes_out = active_nodes_out_find[0].strip().split(' ')[-1]
         
-        active_rolls_find = list(filter(lambda x: 'Активные ROLL\'ы' in x, answer[::-1]))
+        active_rolls_find = list(filter(lambda x: 'Active rolls:' in x, answer[::-1]))
         if not len(active_rolls_find):
             return (False, f'Wrong active rolls reply')
         active_rolls = active_rolls_find[0].strip().split(' ')[-1]
 
-        balance_find = list(filter(lambda x: 'Баланс:' in x, answer[::-1]))
+        candidate_rolls_find = list(filter(lambda x: 'Candidate rolls:' in x, answer[::-1]))
+        if not len(candidate_rolls_find):
+            return (False, f'Wrong candidate rolls reply')
+        candidate_rolls = candidate_rolls_find[0].strip().split(' ')[-1]
+
+        balance_find = list(filter(lambda x: 'Final balance:' in x, answer[::-1]))
         if not len(balance_find):
             return (False, f'Wrong balance reply')
         balance = balance_find[0].strip().split(' ')[-1]
 
         if int(active_rolls) < 1:
             return (False, f'Wrong active rolls count {active_rolls}')
-        if int(active_nodes_in) + int(active_nodes_out) < 1:
-            return (False, f'Wrong active nodes count {active_nodes_in}(in) | {active_nodes_out}(out)')
-        return (True, f'Node is OK, nodes: {active_nodes_in}(in) | {active_nodes_out}(out), rolls: {active_rolls}, balance: {balance}', balance)
+        if int(candidate_rolls) < 1:
+            return (False, f'Wrong candidate rolls count {candidate_rolls}')
+        # if int(active_nodes_in) + int(active_nodes_out) < 1:
+        #     return (False, f'Wrong active nodes count {active_nodes_in}(in) | {active_nodes_out}(out)')
+        return (True, f'Node is OK, rolls active: {active_rolls}, rolls candidate: {candidate_rolls}, balance: {balance}', balance)
 
 
 CHECKER_API_CLASS = 'api'
