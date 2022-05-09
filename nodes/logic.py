@@ -116,6 +116,21 @@ class MinimaNodeChecker(BaseNodeCheckerAPI):
         return (True, f'Node is OK, rewards: {rewards}', rewards)
 
 
+class DefundNodeChecker(BaseNodeCheckerSSH):
+
+    def __init__(self, ip, port):
+        self.node_type = NODE_TYPE_DEFUND
+        super().__init__(ip, port)
+
+    def parse_unique_answer(self, answer):
+        answer = json.loads(answer)
+        if answer.get('result', {}).get('sync_info', {}).get('catching_up', {}) is not False:
+            return (False, f'Node is catching_up, and not syncronized yet')
+        latest_block_height = answer.get('result', {}).get('sync_info', {}).get('latest_block_height', {})
+        
+        return (True, f'Node is OK, latest_block_height: {latest_block_height}', 0)
+
+
 class MassaNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
@@ -155,17 +170,68 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
         return (True, f'Node is OK, rolls active: {active_rolls}, rolls candidate: {candidate_rolls}, balance: {balance}', balance)
 
 
+class StarknetNodeChecker(BaseNodeCheckerSSH):
+
+    def __init__(self, ip, username, password, screen, sudo):
+        self.cmds = ["systemctl status starknetd | grep Active"]
+        super().__init__(ip, username, password, screen, sudo)
+
+    def parse_unique_answer(self, answer):
+        
+        active_find = list(filter(lambda x: 'Active:' in x, answer[::-1]))
+        if not len(active_find):
+            return (False, f'Wrong active reply')
+        if not 'active (running)' in active_find[0].strip():
+            return (False, f'Wrong active node status')
+        
+        return (True, f'Node is OK, active (running)', 0)
+
+
+class DefundNodeChecker(BaseNodeCheckerSSH):
+
+    def __init__(self, ip, username, password, screen, sudo):
+        self.cmds = ["curl localhost:26657/status"]
+        super().__init__(ip, username, password, screen, sudo)
+
+    def parse_unique_answer(self, answer):
+        answer = json.loads(answer)
+        if answer.get('result', {}).get('sync_info', {}).get('catching_up', {}) is not False:
+            return (False, f'Node is catching_up, and not syncronized yet')
+        latest_block_height = answer.get('result', {}).get('sync_info', {}).get('latest_block_height', {})
+        
+        return (True, f'Node is OK, latest_block_height: {latest_block_height}', 0)
+
+    def parse_unique_answer(self, answer):
+        catching_up_find = list(filter(lambda x: 'catching_up' in x, answer[::-1]))
+        if not len(catching_up_find):
+            return (False, f'Wrong catching_up reply')
+        catching_up = catching_up_find[0].strip().split(' ')[-1]
+        if catching_up != 'false':
+            return (False, f'Wrong catching_up status, {catching_up}')
+        
+        latest_block_height_find = list(filter(lambda x: 'latest_block_height' in x, answer[::-1]))
+        if not len(latest_block_height_find):
+            return (False, f'Wrong latest_block_height_find reply')
+        latest_block_height = latest_block_height_find[0].strip().split(' ')[-1]
+        
+        return (True, f'Node is OK, latest_block_height {latest_block_height}', 0)
+
+
 CHECKER_API_CLASS = 'api'
 CHECKER_SSH_CLASS = 'ssh'
 
 NODE_TYPE_APTOS = 'aptos'
 NODE_TYPE_MINIMA = 'minima'
 NODE_TYPE_MASSA = 'massa'
+NODE_TYPE_STARKNET = 'starknet'
+NODE_TYPE_DEFUND = 'defund'
 
 NODE_TYPES = {
     NODE_TYPE_APTOS: {'class': AptosNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}/metrics'},
     NODE_TYPE_MINIMA: {'class': MinimaNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}/incentivecash'},
-    NODE_TYPE_MASSA: {'class': MassaNodeChecker, 'checker': CHECKER_SSH_CLASS}
+    NODE_TYPE_MASSA: {'class': MassaNodeChecker, 'checker': CHECKER_SSH_CLASS},
+    NODE_TYPE_STARKNET: {'class': StarknetNodeChecker, 'checker': CHECKER_SSH_CLASS},
+    NODE_TYPE_DEFUND: {'class': DefundNodeChecker, 'checker': CHECKER_SSH_CLASS},
 }
 
 
