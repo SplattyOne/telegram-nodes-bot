@@ -63,8 +63,7 @@ class BaseNodeCheckerSSH():
     def parse_answer(self, answer):
         try:
             return self.parse_unique_answer(answer)
-        except Exception as e:
-            # return (False, f'Wrong ssh answer parsing {str(e)[:MAX_ERROR_LEN]}')
+        except Exception:
             return (False, f'Wrong ssh answer parsing {traceback.format_exc()}')
 
     @abstractmethod
@@ -79,23 +78,29 @@ class AptosNodeChecker(BaseNodeCheckerAPI):
         super().__init__(ip, port)
 
     def parse_unique_answer(self, answer):
+        aptos_ledger_version = requests.get('https://fullnode.devnet.aptoslabs.com/').json().get('ledger_version')
+
         sync_lines = list(filter(lambda x: 'aptos_state_sync_version' in x, answer.split('\n')))
         if not len(sync_lines):
             return (False, f'Wrong aptos_state_sync_version reply')
         
-        target_block_find = list(filter(lambda x: 'applied_transaction_outputs' in x, sync_lines))
-        if not len(target_block_find):
+        applied_block_find = list(filter(lambda x: 'applied_transaction_outputs' in x, sync_lines))
+        if not len(applied_block_find):
             return (False, f'Wrong aptos_state_sync_version applied reply')
-        target_block = target_block_find[0].split(' ')[-1]
+        applied_block = applied_block_find[0].split(' ')[-1]
 
         synced_block_find = list(filter(lambda x: 'synced' in x, sync_lines))
         if not len(synced_block_find):
             return (False, f'Wrong aptos_state_sync_version synced reply')
         synced_block = synced_block_find[0].split(' ')[-1]
 
-        if abs(int(target_block) - int(synced_block)) > 6:
-            return (False, f'Something wrong in sync process, applied {target_block}, synced {synced_block}')
-        return (True, f'Node is OK, applied {target_block}, synced {synced_block}', 0)
+        if abs(int(aptos_ledger_version) - int(synced_block)) > 10:
+            return (False, f'Something wrong in sync process, ledger {aptos_ledger_version}, synced {synced_block}')
+
+        if abs(int(aptos_ledger_version) - int(applied_block)) > 10:
+            return (False, f'Something wrong in sync process, ledger {aptos_ledger_version}, applied {applied_block}')
+
+        return (True, f'Node is OK, ledger {aptos_ledger_version}, applied {applied_block}, synced {synced_block}', 0)
 
 
 class MinimaNodeChecker(BaseNodeCheckerAPI):
@@ -135,7 +140,7 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
         # self.cmds = ['. <(wget -qO- https://raw.githubusercontent.com/SecorD0/Massa/main/insert_variables.sh)', 'massa_node_info']
-        self.cmds = ["cd ~/massa/massa-client", "./massa-client wallet_info"]
+        self.cmds = ["wallet_info"]
         super().__init__(ip, username, password, screen, sudo)
 
     def parse_unique_answer(self, answer):
