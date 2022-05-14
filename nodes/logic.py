@@ -243,6 +243,7 @@ NODE_TYPES = {
 def check_nodes_now(user_id, send_changes=False):
     nodes_status = ''
     nodes_status_changed = ''
+    node_rewards = {}
     user_nodes = Node.objects.filter(user_id=user_id).order_by('-created')
 
     for index, node in enumerate(user_nodes):
@@ -277,9 +278,17 @@ def check_nodes_now(user_id, send_changes=False):
         node.last_status_text = status_text
         node.last_reward_value = reward_value
         node.save()
+        
+        # Collect all rewards
+        if not node.node_type in node_rewards:
+            node_rewards[node.node_type] = 0
+        node_rewards[node.node_type] += node.last_reward_value
 
     if send_changes and nodes_status_changed:
         _send_message(user_id=user_id, text=f'Nodes status changed!\n{nodes_status_changed}')
+    
+    if len(node_rewards):
+        nodes_status = nodes_status + '\nAll metrics: ' + str(node_rewards)
 
     return nodes_status or 'No node exists'
 
@@ -289,6 +298,7 @@ def check_nodes_cached(user_id):
     checked_dt = None
     node_rewards = {}
     user_nodes = Node.objects.filter(user_id=user_id).order_by('-created')
+
     for index, node in enumerate(user_nodes):
         node_context = NODE_TYPES.get(node.node_type)
         if node_context['checker'] == CHECKER_API_CLASS:
@@ -299,12 +309,16 @@ def check_nodes_cached(user_id):
         if node.last_checked and checked_dt != node.last_checked.replace(microsecond=0, second=0):
             checked_dt = node.last_checked.replace(microsecond=0, second=0)
             nodes_status += 'Checked at ' + timezone.localtime(node.last_checked).strftime('%Y-%m-%d %H:%M') + ':\n'
+        nodes_status += f'{index+1}. {node.node_type} {node_description} {node_status}\n '
+        
+        # Collect all rewards
         if not node.node_type in node_rewards:
             node_rewards[node.node_type] = 0
         node_rewards[node.node_type] += node.last_reward_value
-        nodes_status += f'{index+1}. {node.node_type} {node_description} {node_status}\n '
+    
     if len(node_rewards):
         nodes_status = nodes_status + '\nAll metrics: ' + str(node_rewards)
+    
     return nodes_status or 'No node exists'
 
 
