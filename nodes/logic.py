@@ -121,21 +121,6 @@ class MinimaNodeChecker(BaseNodeCheckerAPI):
         return (True, f'Node is OK, rewards: {rewards}', rewards)
 
 
-class DefundNodeChecker(BaseNodeCheckerSSH):
-
-    def __init__(self, ip, port):
-        self.node_type = NODE_TYPE_DEFUND
-        super().__init__(ip, port)
-
-    def parse_unique_answer(self, answer):
-        answer = json.loads(answer)
-        if answer.get('result', {}).get('sync_info', {}).get('catching_up', {}) is not False:
-            return (False, f'Node is catching_up, and not syncronized yet')
-        latest_block_height = answer.get('result', {}).get('sync_info', {}).get('latest_block_height', {})
-        
-        return (True, f'Node is OK, latest_block_height: {latest_block_height}', 0)
-
-
 class MassaNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
@@ -199,14 +184,8 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         super().__init__(ip, username, password, screen, sudo)
 
     def parse_unique_answer(self, answer):
-        answer = json.loads(answer)
-        if answer.get('result', {}).get('sync_info', {}).get('catching_up', {}) is not False:
-            return (False, f'Node is catching_up, and not syncronized yet')
-        latest_block_height = answer.get('result', {}).get('sync_info', {}).get('latest_block_height', {})
-        
-        return (True, f'Node is OK, latest_block_height: {latest_block_height}', 0)
+        defund_current_height = requests.get('https://defund.api.explorers.guru/api/blocks?count=1').json()[0].get('height')
 
-    def parse_unique_answer(self, answer):
         catching_up_find = list(filter(lambda x: 'catching_up' in x, answer[::-1]))
         if not len(catching_up_find):
             return (False, f'Wrong catching_up reply')
@@ -217,9 +196,12 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         latest_block_height_find = list(filter(lambda x: 'latest_block_height' in x, answer[::-1]))
         if not len(latest_block_height_find):
             return (False, f'Wrong latest_block_height_find reply')
-        latest_block_height = latest_block_height_find[0].strip().split(' ')[-1]
+        latest_block_height = latest_block_height_find[0].strip().split(' ')[-1][1:-2]
+
+        if abs(int(defund_current_height) - int(latest_block_height)) > 10:
+            return (False, f'Something wrong in sync process, current_block {defund_current_height}, node latest block {latest_block_height}')
         
-        return (True, f'Node is OK, latest_block_height {latest_block_height}', 0)
+        return (True, f'Node is OK, current_block {defund_current_height} latest_block_height {latest_block_height}', 0)
 
 
 CHECKER_API_CLASS = 'api'
