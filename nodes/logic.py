@@ -23,6 +23,13 @@ class BaseNodeCheckerAPI():
         node_api_template = NODE_TYPES[self.node_type].get('api')
         self.node_api = node_api_template.format(ip, port)
 
+    @staticmethod
+    def external_api_check(url, default={}):
+        try:
+            return requests.get(url).json()
+        except Exception:
+            return default
+
     def health_check(self):
         try:
             return self.parse_answer(requests.get(self.node_api))
@@ -54,6 +61,13 @@ class BaseNodeCheckerSSH():
         self.screen = screen
         self.sudo = sudo
 
+    @staticmethod
+    def external_api_check(url, default={}):
+        try:
+            return requests.get(url).json()
+        except Exception:
+            return default
+
     def health_check(self):
         try:
             return self.parse_answer(self.ssh.exec_commands(self.cmds, self.screen, self.sudo))
@@ -78,7 +92,7 @@ class AptosNodeChecker(BaseNodeCheckerAPI):
         super().__init__(ip, port)
 
     def parse_unique_answer(self, answer):
-        aptos_ledger_version = requests.get('https://fullnode.devnet.aptoslabs.com/').json().get('ledger_version')
+        aptos_ledger_version = self.external_api_check('https://fullnode.devnet.aptoslabs.com/').get('ledger_version')
 
         sync_lines = list(filter(lambda x: 'aptos_state_sync_version' in x, answer.split('\n')))
         if not len(sync_lines):
@@ -94,10 +108,10 @@ class AptosNodeChecker(BaseNodeCheckerAPI):
             return (False, f'Wrong aptos_state_sync_version synced reply')
         synced_block = synced_block_find[0].split(' ')[-1]
 
-        if abs(int(aptos_ledger_version) - int(synced_block)) > 10:
+        if aptos_ledger_version and abs(int(aptos_ledger_version) - int(synced_block)) > 10:
             return (False, f'Something wrong in sync process, ledger {aptos_ledger_version}, synced {synced_block}')
 
-        if abs(int(aptos_ledger_version) - int(applied_block)) > 10:
+        if aptos_ledger_version and abs(int(aptos_ledger_version) - int(applied_block)) > 10:
             return (False, f'Something wrong in sync process, ledger {aptos_ledger_version}, applied {applied_block}')
 
         return (True, f'Node is OK, ledger {aptos_ledger_version}, applied {applied_block}, synced {synced_block}', 0)
@@ -184,7 +198,7 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         super().__init__(ip, username, password, screen, sudo)
 
     def parse_unique_answer(self, answer):
-        defund_current_height = requests.get('https://defund.api.explorers.guru/api/blocks?count=1').json()[0].get('height')
+        defund_current_height = self.external_api_check('https://defund.api.explorers.guru/api/blocks?count=1', [{}])[0].get('height')
 
         catching_up_find = list(filter(lambda x: 'catching_up' in x, answer[::-1]))
         if not len(catching_up_find):
@@ -198,7 +212,7 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
             return (False, f'Wrong latest_block_height_find reply')
         latest_block_height = latest_block_height_find[0].strip().split(' ')[-1][1:-2]
 
-        if abs(int(defund_current_height) - int(latest_block_height)) > 10:
+        if defund_current_height and abs(int(defund_current_height) - int(latest_block_height)) > 10:
             return (False, f'Something wrong in sync process, current_block {defund_current_height}, node latest block {latest_block_height}')
         
         return (True, f'Node is OK, current_block {defund_current_height} latest_block_height {latest_block_height}', 0)
