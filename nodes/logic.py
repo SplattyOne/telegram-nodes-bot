@@ -24,11 +24,11 @@ class BaseNodeCheckerAPI():
         self.node_api = node_api_template.format(ip, port)
 
     @staticmethod
-    def external_api_check(url, default={}):
+    def external_api_check(url):
         try:
             return requests.get(url).json()
         except Exception:
-            return default
+            return {}
 
     def health_check(self):
         try:
@@ -62,11 +62,11 @@ class BaseNodeCheckerSSH():
         self.sudo = sudo
 
     @staticmethod
-    def external_api_check(url, default={}):
+    def external_api_check(url):
         try:
             return requests.get(url).json()
         except Exception:
-            return default
+            return {}
 
     def health_check(self):
         try:
@@ -198,7 +198,11 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         super().__init__(ip, username, password, screen, sudo)
 
     def parse_unique_answer(self, answer):
-        defund_current_height = self.external_api_check('https://defund.api.explorers.guru/api/blocks?count=1', [{}])[0].get('height')
+        defund_current_height = self.external_api_check('https://defund.api.explorers.guru/api/blocks?count=1')
+        if isinstance(defund_current_height, list) and len(defund_current_height):
+            defund_current_height = defund_current_height[0].get('height')
+        else:
+            defund_current_height = None
 
         catching_up_find = list(filter(lambda x: 'catching_up' in x, answer[::-1]))
         if not len(catching_up_find):
