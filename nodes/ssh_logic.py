@@ -26,7 +26,7 @@ class SSHConnector():
         self.client.connect(self.host, username=self.username, password=self.password)
         self.channel = self.client.get_transport().open_session()
         self.channel.get_pty()
-        self.channel.settimeout(30)
+        self.channel.settimeout(15)
 
     def send_command(self, cmd) -> None:
         if not self.first_cmd_flag:

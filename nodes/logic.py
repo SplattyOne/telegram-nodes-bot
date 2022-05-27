@@ -26,13 +26,13 @@ class BaseNodeCheckerAPI():
     @staticmethod
     def external_api_check(url):
         try:
-            return requests.get(url).json()
+            return requests.get(url, timeout=15).json()
         except Exception:
             return {}
 
     def health_check(self):
         try:
-            return self.parse_answer(requests.get(self.node_api))
+            return self.parse_answer(requests.get(self.node_api, timeout=15))
         except Exception as e:
             return (False, f'Wrong request answer {str(e)[:MAX_ERROR_LEN]}')
 
@@ -64,7 +64,7 @@ class BaseNodeCheckerSSH():
     @staticmethod
     def external_api_check(url):
         try:
-            return requests.get(url).json()
+            return requests.get(url, timeout=15).json()
         except Exception:
             return {}
 
