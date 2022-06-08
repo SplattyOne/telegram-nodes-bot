@@ -204,6 +204,12 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         else:
             defund_current_height = None
 
+        defund_current_wallet = self.external_api_check('https://defund.api.explorers.guru/api/accounts/defund1y2wlde84z3tqmr99nqzwlljjw67y5hg73363u0/tokens')
+        if isinstance(defund_current_wallet, list) and len(defund_current_wallet):
+            defund_current_wallet = round(defund_current_wallet[0].get('amount'), 2)
+        else:
+            defund_current_wallet = None
+
         catching_up_find = list(filter(lambda x: 'catching_up' in x, answer[::-1]))
         if not len(catching_up_find):
             return (False, f'Wrong catching_up reply')
@@ -219,7 +225,7 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         if defund_current_height and abs(int(defund_current_height) - int(latest_block_height)) > 10:
             return (False, f'Something wrong in sync process, current_block {defund_current_height}, node latest block {latest_block_height}')
         
-        return (True, f'Node is OK, current_block {defund_current_height} latest_block_height {latest_block_height}', 0)
+        return (True, f'Node is OK, current_block {defund_current_height} latest_block_height {latest_block_height}, amount: {defund_current_wallet}', defund_current_wallet)
 
 
 CHECKER_API_CLASS = 'api'
