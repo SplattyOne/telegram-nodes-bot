@@ -127,6 +127,15 @@ def set_up_commands(bot_instance: Bot) -> None:
             'add': 'Add node for check 📊',
             'delete': 'Delete node for check 📊'
             # 'stats': 'Statistics of bot 📊'
+        },
+        'ru': {
+            'start': 'Start bot 🚀',
+            'check_cached': 'Get all nodes statuses 🚀',
+            'check_now': 'Check all nodes statuses 🚀',
+            'list': 'List all nodes 📊',
+            'add': 'Add node for check 📊',
+            'delete': 'Delete node for check 📊'
+            # 'stats': 'Statistics of bot 📊'
         }
     }
 

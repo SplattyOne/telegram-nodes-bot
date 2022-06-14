@@ -13,6 +13,7 @@ from tgbot.handlers.broadcast_message.utils import _send_message
 
 
 MAX_ERROR_LEN = 50
+ADMIN_USERNAME = 'tomatto'
 
 
 class BaseNodeCheckerAPI():
@@ -60,6 +61,7 @@ class BaseNodeCheckerSSH():
         self.ssh = SSHConnector(ip, username, password)
         self.screen = screen
         self.sudo = sudo
+        self.username = username
 
     @staticmethod
     def external_api_check(url):
@@ -140,6 +142,8 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
     def __init__(self, ip, username, password, screen, sudo):
         # self.cmds = ['. <(wget -qO- https://raw.githubusercontent.com/SecorD0/Massa/main/insert_variables.sh)', 'massa_node_info']
         self.cmds = ["wallet_info"]
+        if username == ADMIN_USERNAME:
+            self.cmds = ["cd $HOME/massa/massa-client/ && ./massa-client wallet_info"]
         super().__init__(ip, username, password, screen, sudo)
 
     def parse_unique_answer(self, answer):
@@ -204,7 +208,10 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         else:
             defund_current_height = None
 
-        defund_current_wallet = self.external_api_check('https://defund.api.explorers.guru/api/accounts/defund1y2wlde84z3tqmr99nqzwlljjw67y5hg73363u0/tokens')
+        if self.username == ADMIN_USERNAME:
+            defund_current_wallet = self.external_api_check('https://defund.api.explorers.guru/api/accounts/defund1y2wlde84z3tqmr99nqzwlljjw67y5hg73363u0/tokens')
+        else:
+            defund_current_wallet = None
         if isinstance(defund_current_wallet, list) and len(defund_current_wallet):
             defund_current_wallet = round(defund_current_wallet[0].get('amount'), 2)
         else:
