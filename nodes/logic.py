@@ -16,6 +16,16 @@ MAX_ERROR_LEN = 50
 ADMIN_USERNAME = 'tomatto'
 
 
+def remove_multiple_spaces(line):
+    new_line = ''
+
+    for i, letter in enumerate(line):
+        if i != 0 and letter == ' ' and line[i-1] == ' ':
+            continue
+        new_line += letter
+    return new_line
+
+
 class BaseNodeCheckerAPI():
     node_type = None
     node_api = None
@@ -235,6 +245,30 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         return (True, f'Node is OK, current_block {defund_current_height} latest_block_height {latest_block_height}, amount: {defund_current_wallet}', defund_current_wallet)
 
 
+class IronfishNodeChecker(BaseNodeCheckerSSH):
+
+    def __init__(self, ip, username, password, screen, sudo):
+        self.cmds = [". $HOME/.bashrc", ". $HOME/.bash_profile", "ironfish status"]
+        super().__init__(ip, username, password, screen, sudo)
+
+    def parse_unique_answer(self, answer):
+        node_status_find = list(filter(lambda x: 'Node ' in x, answer[::-1]))
+        if not len(node_status_find):
+            return (False, f'Wrong node_status reply')
+        node_status = remove_multiple_spaces(node_status_find[0].strip()).split(' ')[-1]
+        if node_status != 'STARTED':
+            return (False, f'Wrong node_status status, {node_status}')
+
+        node_syncer_find = list(filter(lambda x: 'Syncer ' in x, answer[::-1]))
+        if not len(node_syncer_find):
+            return (False, f'Wrong node_syncer reply')
+        node_syncer = remove_multiple_spaces(node_syncer_find[0].strip())
+        if 'IDLE' not in node_syncer:
+            return (False, f'Wrong node_syncer progress, {node_syncer}')
+        
+        return (True, f'Node is OK, status {node_status}, {node_syncer}', 0)
+
+
 CHECKER_API_CLASS = 'api'
 CHECKER_SSH_CLASS = 'ssh'
 
@@ -243,6 +277,7 @@ NODE_TYPE_MINIMA = 'minima'
 NODE_TYPE_MASSA = 'massa'
 NODE_TYPE_STARKNET = 'starknet'
 NODE_TYPE_DEFUND = 'defund'
+NODE_TYPE_IRONFISH = 'ironfish'
 
 NODE_TYPES = {
     NODE_TYPE_APTOS: {'class': AptosNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}/metrics'},
@@ -250,6 +285,7 @@ NODE_TYPES = {
     NODE_TYPE_MASSA: {'class': MassaNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_STARKNET: {'class': StarknetNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_DEFUND: {'class': DefundNodeChecker, 'checker': CHECKER_SSH_CLASS},
+    NODE_TYPE_IRONFISH: {'class': IronfishNodeChecker, 'checker': CHECKER_SSH_CLASS}
 }
 
 

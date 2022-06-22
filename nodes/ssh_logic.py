@@ -4,7 +4,8 @@ import re
 from time import sleep
 
 
-MAX_COMMAND_WAIT = 10
+MAX_COMMAND_WAIT = 12
+CHANNEL_TIMEOUT = 20
 
 
 class SSHConnector():
@@ -26,7 +27,7 @@ class SSHConnector():
         self.client.connect(self.host, username=self.username, password=self.password)
         self.channel = self.client.get_transport().open_session()
         self.channel.get_pty()
-        self.channel.settimeout(15)
+        self.channel.settimeout(CHANNEL_TIMEOUT)
 
     def send_command(self, cmd) -> None:
         if not self.first_cmd_flag:
@@ -46,6 +47,7 @@ class SSHConnector():
             if dt_start + timedelta(seconds=MAX_COMMAND_WAIT) < dt_now:
                 raise TimeoutError(f'Cannot execute command {cmd}, after {MAX_COMMAND_WAIT} seconds')
             sleep(1)
+        sleep(3)
 
     def enter_sudo(self) -> None:
         if self.sudo_flag:

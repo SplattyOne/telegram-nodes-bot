@@ -31,8 +31,8 @@ def setup_dispatcher(dp):
     """
     # onboarding
     dp.add_handler(CommandHandler("start", onboarding_handlers.command_start))
-    dp.add_handler(CommandHandler("check_cached", onboarding_handlers.check_nodes_cached_cmd))
-    dp.add_handler(CommandHandler("check_now", onboarding_handlers.check_nodes_now_cmd))
+    dp.add_handler(CommandHandler("cahced", onboarding_handlers.check_nodes_cached_cmd))
+    dp.add_handler(CommandHandler("now", onboarding_handlers.check_nodes_now_cmd))
     dp.add_handler(CommandHandler("list", onboarding_handlers.list_nodes_now_cmd))
     dp.add_handler(CommandHandler("add", onboarding_handlers.add_node_checker_cmd))
     dp.add_handler(CommandHandler("delete", onboarding_handlers.delete_node_checker_cmd))
@@ -121,8 +121,8 @@ def set_up_commands(bot_instance: Bot) -> None:
     langs_with_commands: Dict[str, Dict[str, str]] = {
         'en': {
             'start': 'Start bot 🚀',
-            'check_cached': 'Get all nodes statuses 🚀',
-            'check_now': 'Check all nodes statuses 🚀',
+            'cached': 'Get all nodes statuses 🚀',
+            'now': 'Check all nodes statuses 🚀',
             'list': 'List all nodes 📊',
             'add': 'Add node for check 📊',
             'delete': 'Delete node for check 📊'
@@ -130,8 +130,8 @@ def set_up_commands(bot_instance: Bot) -> None:
         },
         'ru': {
             'start': 'Start bot 🚀',
-            'check_cached': 'Get all nodes statuses 🚀',
-            'check_now': 'Check all nodes statuses 🚀',
+            'cached': 'Get all nodes statuses 🚀',
+            'now': 'Check all nodes statuses 🚀',
             'list': 'List all nodes 📊',
             'add': 'Add node for check 📊',
             'delete': 'Delete node for check 📊'
