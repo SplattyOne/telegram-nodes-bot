@@ -31,7 +31,7 @@ def setup_dispatcher(dp):
     """
     # onboarding
     dp.add_handler(CommandHandler("start", onboarding_handlers.command_start))
-    dp.add_handler(CommandHandler("cahced", onboarding_handlers.check_nodes_cached_cmd))
+    dp.add_handler(CommandHandler("cached", onboarding_handlers.check_nodes_cached_cmd))
     dp.add_handler(CommandHandler("now", onboarding_handlers.check_nodes_now_cmd))
     dp.add_handler(CommandHandler("list", onboarding_handlers.list_nodes_now_cmd))
     dp.add_handler(CommandHandler("add", onboarding_handlers.add_node_checker_cmd))
