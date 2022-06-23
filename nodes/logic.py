@@ -67,8 +67,8 @@ class BaseNodeCheckerSSH():
     screen = False
     cmds = None
 
-    def __init__(self, ip, username, password, screen, sudo):
-        self.ssh = SSHConnector(ip, username, password)
+    def __init__(self, ip, username, password, screen, sudo, **kwargs):
+        self.ssh = SSHConnector(ip, username, password, **kwargs)
         self.screen = screen
         self.sudo = sudo
         self.username = username
@@ -249,7 +249,7 @@ class IronfishNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
         self.cmds = [". $HOME/.bashrc", ". $HOME/.bash_profile", "ironfish status"]
-        super().__init__(ip, username, password, screen, sudo)
+        super().__init__(ip, username, password, screen, sudo, after_command_wait=6)
 
     def parse_unique_answer(self, answer):
         node_status_find = list(filter(lambda x: 'Node ' in x, answer[::-1]))

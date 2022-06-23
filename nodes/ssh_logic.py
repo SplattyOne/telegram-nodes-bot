@@ -4,30 +4,34 @@ import re
 from time import sleep
 
 
-MAX_COMMAND_WAIT = 12
+MAX_COMMAND_WAIT = 10
+AFTER_COMMAND_WAIT = 1
 CHANNEL_TIMEOUT = 20
 
 
 class SSHConnector():
     client = None
     channel = None
+    first_cmd_flag = False
+    sudo_flag = False
+    screen_flag = False
 
-    def __init__(self, host, username, password) -> None:
+    def __init__(self, host, username, password, max_command_wait=MAX_COMMAND_WAIT, \
+            after_command_wait=AFTER_COMMAND_WAIT, channel_timeout=CHANNEL_TIMEOUT) -> None:
         self.username = username
         self.password = password
         self.host = host
+        self.max_command_wait = max_command_wait
+        self.after_command_wait = after_command_wait
+        self.channel_timeout = channel_timeout
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-        self.first_cmd_flag = False
-        self.sudo_flag = False
-        self.screen_flag = False
 
     def connect(self) -> None:
         self.client.connect(self.host, username=self.username, password=self.password)
         self.channel = self.client.get_transport().open_session()
         self.channel.get_pty()
-        self.channel.settimeout(CHANNEL_TIMEOUT)
+        self.channel.settimeout(self.channel_timeout)
 
     def send_command(self, cmd) -> None:
         if not self.first_cmd_flag:
@@ -44,10 +48,10 @@ class SSHConnector():
         dt_start = datetime.now()
         while not self.channel.recv_ready():
             dt_now = datetime.now()
-            if dt_start + timedelta(seconds=MAX_COMMAND_WAIT) < dt_now:
-                raise TimeoutError(f'Cannot execute command {cmd}, after {MAX_COMMAND_WAIT} seconds')
+            if dt_start + timedelta(seconds=self.max_command_wait) < dt_now:
+                raise TimeoutError(f'Cannot execute command {cmd}, after {self.max_command_wait} seconds')
             sleep(1)
-        sleep(3)
+        sleep(self.after_command_wait)
 
     def enter_sudo(self) -> None:
         if self.sudo_flag:
