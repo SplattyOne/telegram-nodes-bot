@@ -239,7 +239,7 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
             return (False, f'Wrong latest_block_height_find reply')
         latest_block_height = latest_block_height_find[0].strip().split(' ')[-1][1:-2]
 
-        if defund_current_height and abs(int(defund_current_height) - int(latest_block_height)) > 1000:
+        if defund_current_height and abs(int(defund_current_height) - int(latest_block_height)) > 2000:
             return (False, f'Something wrong in sync process, current_block {defund_current_height}, node latest block {latest_block_height}')
         
         return (True, f'Node is OK, current_block {defund_current_height} latest_block_height {latest_block_height}, amount: {defund_current_wallet}', defund_current_wallet)
