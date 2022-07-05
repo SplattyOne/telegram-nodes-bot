@@ -269,6 +269,53 @@ class IronfishNodeChecker(BaseNodeCheckerSSH):
         return (True, f'Node is OK, status {node_status}, {node_syncer}', 0)
 
 
+class MasahNodeChecker(BaseNodeCheckerSSH):
+
+    def __init__(self, ip, username, password, screen, sudo):
+        self.cmds = ["docker exec -it masa-node-v10_masa-node_1 geth attach /qdata/dd/geth.ipc", 
+                    "net.listening", "net.peerCount", "eth.syncing", "exit"]
+        super().__init__(ip, username, password, screen, sudo)
+
+    def get_next_to_finded_line(slef, answer, line_contains):
+        for index, line in enumerate(answer):
+            if line_contains in line:
+                if len(answer) < index:
+                    return False
+                return answer[index+1]
+        return False
+
+    def parse_unique_answer(self, answer):
+        node_listen_find = self.get_next_to_finded_line(answer, 'net.listening')
+        if not node_listen_find:
+            return (False, f'Wrong node_listen reply')
+        if node_listen_find != 'true':
+            return (False, f'Wrong node_listen reply, not true: {node_listen_find}')
+        node_peer_count = self.get_next_to_finded_line(answer, 'net.peerCount')
+        if not node_peer_count:
+            return (False, f'Wrong node_peer_count reply')
+        if int(node_peer_count) == 0:
+            return (False, f'Wrong node_peer_count reply, {node_peer_count} nodes')
+        node_peer_syncing = self.get_next_to_finded_line(answer, 'eth.syncing')
+        if not node_peer_syncing:
+            return (False, f'Wrong node_peer_syncing reply')
+        
+        if node_peer_syncing == 'false':
+            return (True, f'Node is OK, peers {node_peer_count}, syncing {node_peer_syncing}', 0)
+        
+        node_current_block_find = list(filter(lambda x: 'currentBlock ' in x, answer[::-1]))
+        if not len(node_current_block_find):
+            return (False, f'Wrong node_current_block_find reply')
+        node_current_block = node_current_block_find[0].strip().split(' ')[-1][:-1]
+        node_highest_block_find = list(filter(lambda x: 'highestBlock ' in x, answer[::-1]))
+        if not len(node_highest_block_find):
+            return (False, f'Wrong node_highest_block_find reply')
+        node_highest_block = node_highest_block_find[0].strip().split(' ')[-1][:-1]
+        if abs(int(node_current_block) - int(node_highest_block)) > 10:
+            return (False, f'Wrong node_blocks reply, current {node_current_block}, highest {node_highest_block}')
+    
+        return (True, f'Node is OK, peers {node_peer_count}, current_block {node_current_block}, highest_block {node_highest_block}', 0)
+
+
 CHECKER_API_CLASS = 'api'
 CHECKER_SSH_CLASS = 'ssh'
 
@@ -278,6 +325,7 @@ NODE_TYPE_MASSA = 'massa'
 NODE_TYPE_STARKNET = 'starknet'
 NODE_TYPE_DEFUND = 'defund'
 NODE_TYPE_IRONFISH = 'ironfish'
+NODE_TYPE_MASA = 'masa'
 
 NODE_TYPES = {
     NODE_TYPE_APTOS: {'class': AptosNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}/metrics'},
@@ -285,7 +333,8 @@ NODE_TYPES = {
     NODE_TYPE_MASSA: {'class': MassaNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_STARKNET: {'class': StarknetNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_DEFUND: {'class': DefundNodeChecker, 'checker': CHECKER_SSH_CLASS},
-    NODE_TYPE_IRONFISH: {'class': IronfishNodeChecker, 'checker': CHECKER_SSH_CLASS}
+    NODE_TYPE_IRONFISH: {'class': IronfishNodeChecker, 'checker': CHECKER_SSH_CLASS},
+    NODE_TYPE_MASA: {'class': MasahNodeChecker, 'checker': CHECKER_SSH_CLASS}
 }
 
 
