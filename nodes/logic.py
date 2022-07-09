@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from datetime import timedelta
+from datetime import timedelta, datetime
 import re
 import requests
 import json
@@ -104,29 +104,39 @@ class AptosNodeChecker(BaseNodeCheckerAPI):
         super().__init__(ip, port)
 
     def parse_unique_answer(self, answer):
-        aptos_ledger_version = self.external_api_check('https://fullnode.devnet.aptoslabs.com/').get('ledger_version')
+        # aptos_ledger_version = self.external_api_check('https://fullnode.devnet.aptoslabs.com/').get('ledger_version')
 
-        sync_lines = list(filter(lambda x: 'aptos_state_sync_version' in x, answer.split('\n')))
-        if not len(sync_lines):
-            return (False, f'Wrong aptos_state_sync_version reply')
+        # sync_lines = list(filter(lambda x: 'aptos_state_sync_version' in x, answer.split('\n')))
+        # if not len(sync_lines):
+        #     return (False, f'Wrong aptos_state_sync_version reply')
         
-        applied_block_find = list(filter(lambda x: 'applied_transaction_outputs' in x, sync_lines))
-        if not len(applied_block_find):
-            return (False, f'Wrong aptos_state_sync_version applied reply')
-        applied_block = applied_block_find[0].split(' ')[-1]
+        # applied_block_find = list(filter(lambda x: 'applied_transaction_outputs' in x, sync_lines))
+        # if not len(applied_block_find):
+        #     return (False, f'Wrong aptos_state_sync_version applied reply')
+        # applied_block = applied_block_find[0].split(' ')[-1]
 
-        synced_block_find = list(filter(lambda x: 'synced' in x, sync_lines))
-        if not len(synced_block_find):
-            return (False, f'Wrong aptos_state_sync_version synced reply')
-        synced_block = synced_block_find[0].split(' ')[-1]
+        # synced_block_find = list(filter(lambda x: 'synced' in x, sync_lines))
+        # if not len(synced_block_find):
+        #     return (False, f'Wrong aptos_state_sync_version synced reply')
+        # synced_block = synced_block_find[0].split(' ')[-1]
 
-        if aptos_ledger_version and abs(int(aptos_ledger_version) - int(synced_block)) > 10:
-            return (False, f'Something wrong in sync process, ledger {aptos_ledger_version}, synced {synced_block}')
+        # if aptos_ledger_version and abs(int(aptos_ledger_version) - int(synced_block)) > 10:
+        #     return (False, f'Something wrong in sync process, ledger {aptos_ledger_version}, synced {synced_block}')
 
-        if aptos_ledger_version and abs(int(aptos_ledger_version) - int(applied_block)) > 10:
-            return (False, f'Something wrong in sync process, ledger {aptos_ledger_version}, applied {applied_block}')
+        # if aptos_ledger_version and abs(int(aptos_ledger_version) - int(applied_block)) > 10:
+        #     return (False, f'Something wrong in sync process, ledger {aptos_ledger_version}, applied {applied_block}')
+        answer = json.loads(answer)
 
-        return (True, f'Node is OK, ledger {aptos_ledger_version}, applied {applied_block}, synced {synced_block}', 0)
+        ledger_version = answer.get('ledger_version')
+        if not ledger_version:
+            return (False, f'Wrong aptos ledger_version reply')
+
+        ledger_timestamp = answer.get('ledger_timestamp')
+        if not ledger_timestamp:
+            return (False, f'Wrong aptos ledger_timestamp reply')
+        ledger_timestamp_dt = datetime.fromtimestamp(int(ledger_timestamp) // 1000 // 1000)
+
+        return (True, f'Node is OK, ledger {ledger_version}, dt {ledger_timestamp_dt}', 0)
 
 
 class MinimaNodeChecker(BaseNodeCheckerAPI):
@@ -328,7 +338,7 @@ NODE_TYPE_IRONFISH = 'ironfish'
 NODE_TYPE_MASA = 'masa'
 
 NODE_TYPES = {
-    NODE_TYPE_APTOS: {'class': AptosNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}/metrics'},
+    NODE_TYPE_APTOS: {'class': AptosNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}'},
     NODE_TYPE_MINIMA: {'class': MinimaNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}/incentivecash'},
     NODE_TYPE_MASSA: {'class': MassaNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_STARKNET: {'class': StarknetNodeChecker, 'checker': CHECKER_SSH_CLASS},
