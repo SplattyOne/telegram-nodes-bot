@@ -163,7 +163,7 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
         # self.cmds = ['. <(wget -qO- https://raw.githubusercontent.com/SecorD0/Massa/main/insert_variables.sh)', 'massa_node_info']
         self.cmds = ["wallet_info"]
         if username == ADMIN_USERNAME:
-            self.cmds = ["cd $HOME/massa/massa-client/ && ./massa-client wallet_info"]
+            self.cmds = ["cd $HOME/massa/massa-client/ && ./massa-client -p tomattotomatto wallet_info"]
         super().__init__(ip, username, password, screen, sudo)
 
     def parse_unique_answer(self, answer):
