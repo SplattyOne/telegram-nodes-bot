@@ -262,14 +262,14 @@ class IronfishNodeChecker(BaseNodeCheckerSSH):
         super().__init__(ip, username, password, screen, sudo, after_command_wait=6, max_command_wait=18, channel_timeout=30)
 
     def parse_unique_answer(self, answer):
-        node_status_find = list(filter(lambda x: 'Node ' in x, answer[::-1]))
+        node_status_find = list(filter(lambda x: 'Node ' in x, answer))
         if not len(node_status_find):
             return (False, f'Wrong node_status reply')
         node_status = remove_multiple_spaces(node_status_find[0].strip()).split(' ')[-1]
         if node_status != 'STARTED':
             return (False, f'Wrong node_status status, {node_status}')
 
-        node_syncer_find = list(filter(lambda x: 'Syncer ' in x, answer[::-1]))
+        node_syncer_find = list(filter(lambda x: 'Syncer ' in x, answer))
         if not len(node_syncer_find):
             return (False, f'Wrong node_syncer reply')
         node_syncer = remove_multiple_spaces(node_syncer_find[0].strip())
