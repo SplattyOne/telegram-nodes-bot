@@ -25,3 +25,8 @@ class CheckHistory(models.Model):
     status = models.BooleanField(default=False)
     status_text = models.CharField(null=True, blank=True, max_length=2048)
     reward_value = models.FloatField(default=0)
+
+
+class NodesGuru(models.Model):
+    statuses = models.TextField()
+    checked = models.DateTimeField(auto_now_add=True)

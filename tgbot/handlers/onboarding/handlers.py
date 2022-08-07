@@ -28,7 +28,7 @@ def check_nodes_now(update: Update, context: CallbackContext) -> None:
 
     context.bot.edit_message_text(
         text='Loading...',
-        chat_id=user_id,
+        # chat_id=user_id,
         message_id=update.callback_query.message.message_id,
         parse_mode=ParseMode.HTML
     )
@@ -37,7 +37,7 @@ def check_nodes_now(update: Update, context: CallbackContext) -> None:
 
     context.bot.edit_message_text(
         text=text,
-        chat_id=user_id,
+        # chat_id=user_id,
         message_id=update.callback_query.message.message_id,
         parse_mode=ParseMode.HTML
     )
@@ -59,7 +59,7 @@ def check_nodes_cached(update: Update, context: CallbackContext) -> None:
 
     context.bot.edit_message_text(
         text='Loading...',
-        chat_id=user_id,
+        # chat_id=user_id,
         message_id=update.callback_query.message.message_id,
         parse_mode=ParseMode.HTML
     )
@@ -68,7 +68,7 @@ def check_nodes_cached(update: Update, context: CallbackContext) -> None:
 
     context.bot.edit_message_text(
         text=text,
-        chat_id=user_id,
+        # chat_id=user_id,
         message_id=update.callback_query.message.message_id,
         parse_mode=ParseMode.HTML
     )
@@ -92,7 +92,7 @@ def list_nodes_now(update: Update, context: CallbackContext) -> None:
 
     context.bot.edit_message_text(
         text=text,
-        chat_id=user_id,
+        # chat_id=user_id,
         message_id=update.callback_query.message.message_id,
         parse_mode=ParseMode.HTML
     )
@@ -113,7 +113,7 @@ def delete_node_checker(update: Update, context: CallbackContext) -> None:
 
     context.bot.edit_message_text(
         text=text,
-        chat_id=user_id,
+        # chat_id=user_id,
         message_id=update.callback_query.message.message_id,
         parse_mode=ParseMode.HTML
     )
@@ -135,7 +135,7 @@ def add_node_checker(update: Update, context: CallbackContext) -> None:
 
     context.bot.edit_message_text(
         text=text,
-        chat_id=user_id,
+        # chat_id=user_id,
         message_id=update.callback_query.message.message_id,
         parse_mode=ParseMode.HTML
     )
