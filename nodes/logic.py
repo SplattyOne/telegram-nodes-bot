@@ -279,7 +279,7 @@ class IronfishNodeChecker(BaseNodeCheckerSSH):
         return (True, f'Node is OK, status {node_status}, {node_syncer}', 0)
 
 
-class MasahNodeChecker(BaseNodeCheckerSSH):
+class MasaNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
         self.cmds = ["docker exec -it masa-node-v10_masa-node_1 geth attach /qdata/dd/geth.ipc", 
@@ -326,6 +326,21 @@ class MasahNodeChecker(BaseNodeCheckerSSH):
         return (True, f'Node is OK, peers {node_peer_count}, current_block {node_current_block}, highest_block {node_highest_block}', 0)
 
 
+class SuiNodeChecker(BaseNodeCheckerSSH):
+
+    def __init__(self, ip, username, password, screen, sudo):
+        self.cmds = ["curl -s -X POST http://127.0.0.1:9000 -H 'Content-Type: application/json' -d '{ \"jsonrpc\":\"2.0\", \"method\":\"rpc.discover\",\"id\":1}' | jq .result.info"]
+        super().__init__(ip, username, password, screen, sudo)
+
+    def parse_unique_answer(self, answer):
+        version_find = list(filter(lambda x: 'version' in x, answer[::-1]))
+        if not len(version_find):
+            return (False, f'Wrong sui version reply')
+        version = version_find[0].strip().split(': ')[-1]
+        
+        return (True, f'Node is OK, version {version}', 0)
+
+
 CHECKER_API_CLASS = 'api'
 CHECKER_SSH_CLASS = 'ssh'
 
@@ -336,6 +351,7 @@ NODE_TYPE_STARKNET = 'starknet'
 NODE_TYPE_DEFUND = 'defund'
 NODE_TYPE_IRONFISH = 'ironfish'
 NODE_TYPE_MASA = 'masa'
+NODE_TYPE_SUI = 'sui'
 
 NODE_TYPES = {
     NODE_TYPE_APTOS: {'class': AptosNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}'},
@@ -344,7 +360,8 @@ NODE_TYPES = {
     NODE_TYPE_STARKNET: {'class': StarknetNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_DEFUND: {'class': DefundNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_IRONFISH: {'class': IronfishNodeChecker, 'checker': CHECKER_SSH_CLASS},
-    NODE_TYPE_MASA: {'class': MasahNodeChecker, 'checker': CHECKER_SSH_CLASS}
+    NODE_TYPE_MASA: {'class': MasaNodeChecker, 'checker': CHECKER_SSH_CLASS},
+    NODE_TYPE_SUI: {'class': SuiNodeChecker, 'checker': CHECKER_SSH_CLASS}
 }
 
 
