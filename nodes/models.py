@@ -17,6 +17,7 @@ class Node(models.Model):
     last_status = models.BooleanField(default=False)
     last_status_text = models.CharField(null=True, blank=True, max_length=2048)
     last_reward_value = models.FloatField(default=0)
+    same_status_count = models.IntegerField(default=0)
 
 
 class CheckHistory(models.Model):

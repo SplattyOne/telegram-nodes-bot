@@ -6,6 +6,7 @@ import json
 import traceback
 
 from django.utils import timezone
+from django.conf import settings
 
 from nodes.ssh_logic import SSHConnector
 from nodes.models import Node, CheckHistory
@@ -391,7 +392,13 @@ def check_nodes_now(user_id, send_changes=False):
 
         # Check if notify user need
         if node.last_status != status:
-            nodes_status_changed += f'{index+1}. {node.node_type} {node_description} ({status}, {status_text})\n'
+            node.same_status_count = 0
+        else:
+            node.same_status_count += 1
+
+        if (not status and settings.WRONG_STATUS_COUNT_ALERT == (node.same_status_count + 1)) or \
+            (status and settings.GOOD_STATUS_COUNT_ALERT == (node.same_status_count + 1)):
+                nodes_status_changed += f'{index+1}. {node.node_type} {node_description} ({status} {node.same_status_count} times, {status_text})\n'
 
         # Save node history status
         node_history = CheckHistory(node=node, status=status, status_text=status_text, reward_value=reward_value)
@@ -451,7 +458,15 @@ def list_nodes(user_id):
     nodes_status = ''
     user_nodes = Node.objects.filter(user_id=user_id).order_by('-created')
     for index, node in enumerate(user_nodes):
-        nodes_status += f'{index+1}. {node.node_type}: {node.node_ip}:{node.node_port}, {node.ssh_username}/{node.ssh_password} (screen {node.screen_name}, sudo {node.sudo_flag})\n'
+        nodes_status += f'{index+1}. {node.node_type}: {node.node_ip}:{node.node_port or 22}'
+        if node.ssh_username:
+            nodes_status += f', with user {node.ssh_username}'
+        if node.screen_name:
+            nodes_status += f', with screen {node.screen_name}'
+        if node.sudo_flag:
+            nodes_status += f', with sudo'
+        nodes_status += '\n'
+
     return nodes_status or 'No node exists'
 
 

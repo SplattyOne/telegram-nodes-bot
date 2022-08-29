@@ -182,3 +182,5 @@ TELEGRAM_LOGS_CHAT_ID = os.getenv("TELEGRAM_LOGS_CHAT_ID", default=None)
 #     send_default_pii=True
 # )
 
+WRONG_STATUS_COUNT_ALERT = 3
+GOOD_STATUS_COUNT_ALERT = 1
