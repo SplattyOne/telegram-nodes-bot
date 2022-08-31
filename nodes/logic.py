@@ -396,8 +396,12 @@ def check_nodes_now(user_id, send_changes=False):
         else:
             node.same_status_count += 1
 
-        if (not status and settings.WRONG_STATUS_COUNT_ALERT == (node.same_status_count + 1)) or \
-            (status and settings.GOOD_STATUS_COUNT_ALERT == (node.same_status_count + 1)):
+        if node.notified_status != status and \
+            (
+                (not status and (settings.WRONG_STATUS_COUNT_ALERT - 1) <= node.same_status_count) or \
+                (status and (settings.GOOD_STATUS_COUNT_ALERT - 1) <= node.same_status_count)
+            ):
+                node.notified_status = status
                 nodes_status_changed += f'{index+1}. {node.node_type} {node_description} ({status} {node.same_status_count} times, {status_text})\n'
 
         # Save node history status
