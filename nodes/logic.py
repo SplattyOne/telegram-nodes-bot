@@ -398,11 +398,11 @@ def check_nodes_now(user_id, send_changes=False):
 
         if node.notified_status != status and \
             (
-                (not status and (settings.WRONG_STATUS_COUNT_ALERT - 1) <= node.same_status_count) or \
-                (status and (settings.GOOD_STATUS_COUNT_ALERT - 1) <= node.same_status_count)
+                (not status and settings.WRONG_STATUS_COUNT_ALERT <= (node.same_status_count + 1)) or \
+                (status and settings.GOOD_STATUS_COUNT_ALERT <= (node.same_status_count + 1))
             ):
                 node.notified_status = status
-                nodes_status_changed += f'{index+1}. {node.node_type} {node_description} ({status} {node.same_status_count} times, {status_text})\n'
+                nodes_status_changed += f'{index+1}. {node.node_type} {node_description} ({status} {(node.same_status_count + 1)} times, {status_text})\n'
 
         # Save node history status
         node_history = CheckHistory(node=node, status=status, status_text=status_text, reward_value=reward_value)
