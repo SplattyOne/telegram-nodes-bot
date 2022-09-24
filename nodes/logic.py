@@ -162,9 +162,7 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
         # self.cmds = ['. <(wget -qO- https://raw.githubusercontent.com/SecorD0/Massa/main/insert_variables.sh)', 'massa_node_info']
-        self.cmds = ["wallet_info"]
-        if username == ADMIN_USERNAME:
-            self.cmds = ["cd $HOME/massa/massa-client/ && ./massa-client -p tomattotomatto wallet_info"]
+        self.cmds = ["cd $HOME/massa/massa-client/ && ./massa-client -p $(cat $HOME/massapasswd) wallet_info"]
         super().__init__(ip, username, password, screen, sudo)
 
     def parse_unique_answer(self, answer):
@@ -174,21 +172,21 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
         #     return (False, f'Wrong active nodes reply')
         # active_nodes_in = active_nodes_in_find[0].strip().split(' ')[-1]
         # active_nodes_out = active_nodes_out_find[0].strip().split(' ')[-1]
-        
-        active_rolls_find = list(filter(lambda x: 'Active rolls:' in x, answer[::-1]))
-        if not len(active_rolls_find):
-            return (False, f'Wrong active rolls reply')
-        active_rolls = active_rolls_find[0].strip().split(' ')[-1]
 
-        candidate_rolls_find = list(filter(lambda x: 'Candidate rolls:' in x, answer[::-1]))
-        if not len(candidate_rolls_find):
-            return (False, f'Wrong candidate rolls reply')
-        candidate_rolls = candidate_rolls_find[0].strip().split(' ')[-1]
+        rolls_find = list(filter(lambda x: 'Rolls:' in x, answer[::-1]))
+        if not len(rolls_find):
+            return (False, f'Wrong rolls reply')
+        parse_rolls = rolls_find[0].strip().split(', ')
+        if len(parse_rolls) < 3:
+            return (False, f'Wrong rolls string count reply')
 
-        balance_find = list(filter(lambda x: 'Final balance:' in x, answer[::-1]))
+        active_rolls = parse_rolls[0].split('=')[-1]
+        candidate_rolls = parse_rolls[2].split('=')[-1]
+
+        balance_find = list(filter(lambda x: 'Sequential balance:' in x, answer[::-1]))
         if not len(balance_find):
             return (False, f'Wrong balance reply')
-        balance = balance_find[0].strip().split(' ')[-1]
+        balance = balance_find[0].strip().split(', ')[-1].split('=')[-1]
 
         if int(active_rolls) < 1:
             return (False, f'Wrong active rolls count {active_rolls}')
