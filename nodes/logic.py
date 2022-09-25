@@ -340,6 +340,23 @@ class SuiNodeChecker(BaseNodeCheckerSSH):
         return (True, f'Node is OK, version {version}', 0)
 
 
+class SsvNodeChecker(BaseNodeCheckerSSH):
+
+    def __init__(self, ip, username, password, screen, sudo):
+        self.cmds = ["docker inspect ssv_node | grep Status"]
+        super().__init__(ip, username, password, screen, sudo)
+
+    def parse_unique_answer(self, answer):
+        status_find = list(filter(lambda x: 'Status' in x, answer[::-1]))
+        if not len(status_find):
+            return (False, f'Wrong ssv status reply')
+        status = status_find[0].strip().split(': ')[-1][:-1]
+        if status != '"running"':
+            return (False, f'Wrong ssv status reply, {status}')
+
+        return (True, f'Node is OK, status {status}', 0)
+
+
 CHECKER_API_CLASS = 'api'
 CHECKER_SSH_CLASS = 'ssh'
 
@@ -351,6 +368,7 @@ NODE_TYPE_DEFUND = 'defund'
 NODE_TYPE_IRONFISH = 'ironfish'
 NODE_TYPE_MASA = 'masa'
 NODE_TYPE_SUI = 'sui'
+NODE_TYPE_SSV = 'ssv'
 
 NODE_TYPES = {
     NODE_TYPE_APTOS: {'class': AptosNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}'},
@@ -360,7 +378,8 @@ NODE_TYPES = {
     NODE_TYPE_DEFUND: {'class': DefundNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_IRONFISH: {'class': IronfishNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_MASA: {'class': MasaNodeChecker, 'checker': CHECKER_SSH_CLASS},
-    NODE_TYPE_SUI: {'class': SuiNodeChecker, 'checker': CHECKER_SSH_CLASS}
+    NODE_TYPE_SUI: {'class': SuiNodeChecker, 'checker': CHECKER_SSH_CLASS},
+    NODE_TYPE_SSV: {'class': SsvNodeChecker, 'checker': CHECKER_SSH_CLASS}
 }
 
 
