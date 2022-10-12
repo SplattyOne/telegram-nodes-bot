@@ -183,7 +183,7 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
         active_rolls = parse_rolls[0].split('=')[-1]
         candidate_rolls = parse_rolls[2].split('=')[-1]
 
-        balance_find = list(filter(lambda x: 'Sequential balance:' in x, answer[::-1]))
+        balance_find = list(filter(lambda x: 'Balance:' in x, answer[::-1]))
         if not len(balance_find):
             return (False, f'Wrong balance reply')
         balance = balance_find[0].strip().split(', ')[-1].split('=')[-1]
