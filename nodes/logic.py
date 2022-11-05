@@ -228,7 +228,7 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
             defund_current_height = None
 
         if self.username == ADMIN_USERNAME:
-            defund_current_wallet = self.external_api_check('https://defund.api.explorers.guru/api/accounts/defund1y2wlde84z3tqmr99nqzwlljjw67y5hg73363u0/tokens')
+            defund_current_wallet = self.external_api_check('https://defund.api.explorers.guru/api/accounts/defund1xwz3pz5tvpuvegrhkx858rxha9drqe8jf8ludz/tokens')
         else:
             defund_current_wallet = None
         if isinstance(defund_current_wallet, list) and len(defund_current_wallet):
