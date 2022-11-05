@@ -235,21 +235,21 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
             defund_current_wallet = round(defund_current_wallet[0].get('amount'), 2)
         else:
             defund_current_wallet = None
-
-        catching_up_find = list(filter(lambda x: 'catching_up' in x, answer[::-1]))
-        if not len(catching_up_find):
-            return (False, f'Wrong catching_up reply')
-        catching_up = catching_up_find[0].strip().split(' ')[-1]
-        if catching_up != 'false':
-            return (False, f'Wrong catching_up status, {catching_up}')
         
         latest_block_height_find = list(filter(lambda x: 'latest_block_height' in x, answer[::-1]))
         if not len(latest_block_height_find):
             return (False, f'Wrong latest_block_height_find reply')
         latest_block_height = latest_block_height_find[0].strip().split(' ')[-1][1:-2]
 
+        catching_up_find = list(filter(lambda x: 'catching_up' in x, answer[::-1]))
+        if not len(catching_up_find):
+            return (False, f'Wrong catching_up reply')
+        catching_up = catching_up_find[0].strip().split(' ')[-1]
+        if catching_up != 'false':
+            return (False, f'Wrong catching_up status {catching_up}, current_block {defund_current_height} latest_block_height {latest_block_height}')
+
         if defund_current_height and abs(int(defund_current_height) - int(latest_block_height)) > 2000:
-            return (False, f'Something wrong in sync process, current_block {defund_current_height}, node latest block {latest_block_height}')
+            return (False, f'Something wrong in sync process, current_block {defund_current_height}, latest_block_height {latest_block_height}')
         
         return (True, f'Node is OK, current_block {defund_current_height} latest_block_height {latest_block_height}, amount: {defund_current_wallet}', defund_current_wallet)
 
