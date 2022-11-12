@@ -201,7 +201,7 @@ class StarknetNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
         self.cmds = ["systemctl status starknetd | grep Active"]
-        super().__init__(ip, username, password, screen, sudo)
+        super().__init__(ip, username, password, screen, True)
 
     def parse_unique_answer(self, answer):
         
@@ -218,7 +218,7 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
         self.cmds = ["curl localhost:26657/status"]
-        super().__init__(ip, username, password, screen, sudo)
+        super().__init__(ip, username, password, screen, False)
 
     def parse_unique_answer(self, answer):
         defund_current_height = self.external_api_check('https://defund.api.explorers.guru/api/blocks?count=1')
@@ -329,7 +329,7 @@ class SuiNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
         self.cmds = ["curl -s -X POST http://127.0.0.1:9000 -H 'Content-Type: application/json' -d '{ \"jsonrpc\":\"2.0\", \"method\":\"rpc.discover\",\"id\":1}' | jq .result.info"]
-        super().__init__(ip, username, password, screen, sudo)
+        super().__init__(ip, username, password, screen, False)
 
     def parse_unique_answer(self, answer):
         version_find = list(filter(lambda x: 'version' in x, answer[::-1]))
@@ -357,11 +357,49 @@ class SsvNodeChecker(BaseNodeCheckerSSH):
         return (True, f'Node is OK, status {status}', 0)
 
 
+class MinimaDockerNodeChecker(BaseNodeCheckerSSH):
+
+    def __init__(self, ip, username, password, screen, sudo):
+        self.cmds = ["su - minima", "docker exec -it minima9001 /bin/sh", "sh /bin/minima", "incentivecash"]
+        super().__init__(ip, username, password, screen, True)
+
+    def parse_unique_answer(self, answer):
+
+        status_find = list(filter(lambda x: 'status' in x, answer[::-1]))
+        if not len(status_find):
+            return (False, f'Wrong minima status reply')
+        status = status_find[0].strip().split(':')[-1][:-1]
+        if status != 'true':
+            return (False, f'Wrong minima status reply, {status}')
+
+        daily_rewards = list(filter(lambda x: 'dailyRewards' in x, answer[::-1]))
+        if not len(daily_rewards):
+            return (False, f'Wrong minima daily_rewards status reply')
+        daily_reward = daily_rewards[0].strip().split(':')[-1][:-1]
+        previous_rewards = list(filter(lambda x: 'previousRewards' in x, answer[::-1]))
+        if not len(previous_rewards):
+            return (False, f'Wrong minima previous_rewards status reply')
+        previous_reward = previous_rewards[0].strip().split(':')[-1][:-1]
+        community_rewards = list(filter(lambda x: 'communityRewards' in x, answer[::-1]))
+        if not len(community_rewards):
+            return (False, f'Wrong minima community_rewards status reply')
+        community_reward = community_rewards[0].strip().split(':')[-1][:-1]
+        inviter_rewards = list(filter(lambda x: 'inviterRewards' in x, answer[::-1]))
+        if not len(inviter_rewards):
+            return (False, f'Wrong minima inviter_rewards status reply')
+        inviter_reward = inviter_rewards[0].strip().split(':')[-1][:-1]
+
+        rewards = float(daily_reward) + float(previous_reward) + float(community_reward) + float(inviter_reward)
+
+        return (True, f'Node is OK, status {status}, rewards {rewards}', rewards)
+
+
 CHECKER_API_CLASS = 'api'
 CHECKER_SSH_CLASS = 'ssh'
 
 NODE_TYPE_APTOS = 'aptos'
 NODE_TYPE_MINIMA = 'minima'
+NODE_TYPE_MINIMA_DOCKER = 'minimadocker'
 NODE_TYPE_MASSA = 'massa'
 NODE_TYPE_STARKNET = 'starknet'
 NODE_TYPE_DEFUND = 'defund'
@@ -373,6 +411,7 @@ NODE_TYPE_SSV = 'ssv'
 NODE_TYPES = {
     NODE_TYPE_APTOS: {'class': AptosNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}'},
     NODE_TYPE_MINIMA: {'class': MinimaNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}/incentivecash'},
+    NODE_TYPE_MINIMA_DOCKER: {'class': MinimaDockerNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_MASSA: {'class': MassaNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_STARKNET: {'class': StarknetNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_DEFUND: {'class': DefundNodeChecker, 'checker': CHECKER_SSH_CLASS},
@@ -441,7 +480,9 @@ def check_nodes_now(user_id, send_changes=False):
         _send_message(user_id=user_id, text=f'Nodes status changed!\n{nodes_status_changed}')
     
     if len(node_rewards):
-        nodes_status = nodes_status + '\nAll metrics: ' + str(node_rewards)
+        nodes_status += '\nAll metrics: '
+        for key, value in node_rewards.items():
+            nodes_status += f'\n{key}: {value}'
 
     return nodes_status or 'No node exists'
 
@@ -470,7 +511,9 @@ def check_nodes_cached(user_id):
         node_rewards[node.node_type] += node.last_reward_value
     
     if len(node_rewards):
-        nodes_status = nodes_status + '\nAll metrics: ' + str(node_rewards)
+        nodes_status += '\nAll metrics: '
+        for key, value in node_rewards.items():
+            nodes_status += f'\n{key}: {value}'
     
     return nodes_status or 'No node exists'
 
