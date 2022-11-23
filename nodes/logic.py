@@ -172,7 +172,7 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
         #     return (False, f'Wrong active nodes reply')
         # active_nodes_in = active_nodes_in_find[0].strip().split(' ')[-1]
         # active_nodes_out = active_nodes_out_find[0].strip().split(' ')[-1]
-
+        print(answer)
         rolls_find = list(filter(lambda x: 'Rolls:' in x, answer[::-1]))
         if not len(rolls_find):
             return (False, f'Wrong rolls reply')
@@ -442,7 +442,10 @@ def check_nodes_now(user_id, send_changes=False):
         node_status_full = checker.health_check()
         status = node_status_full[0]
         status_text = node_status_full[1]
-        reward_value = float(node_status_full[2]) if len(node_status_full) > 2 else 0
+        try:
+            reward_value = float(node_status_full[2]) if len(node_status_full) > 2 else 0
+        except Exception:
+            reward_value = 0
 
         nodes_status += f'{index+1}. {node.node_type} {node_description} ({status}, {status_text})\n'
 
