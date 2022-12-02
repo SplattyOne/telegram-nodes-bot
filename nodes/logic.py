@@ -172,7 +172,6 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
         #     return (False, f'Wrong active nodes reply')
         # active_nodes_in = active_nodes_in_find[0].strip().split(' ')[-1]
         # active_nodes_out = active_nodes_out_find[0].strip().split(' ')[-1]
-        print(answer)
         rolls_find = list(filter(lambda x: 'Rolls:' in x, answer[::-1]))
         if not len(rolls_find):
             return (False, f'Wrong rolls reply')
@@ -217,22 +216,22 @@ class StarknetNodeChecker(BaseNodeCheckerSSH):
 class DefundNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
-        self.cmds = ["curl localhost:26657/status"]
-        super().__init__(ip, username, password, screen, False)
+        self.cmds = [". $HOME/.bashrc && . $HOME/.profile && defundd status 2>&1 | jq .\"SyncInfo\""]
+        super().__init__(ip, username, password, screen, sudo)
 
     def parse_unique_answer(self, answer):
-        defund_current_height = self.external_api_check('https://defund.api.explorers.guru/api/blocks?count=1')
+        defund_current_height = self.external_api_check('https://defund.api.explorers.guru/api/v1/blocks?count=1')
         if isinstance(defund_current_height, list) and len(defund_current_height):
             defund_current_height = defund_current_height[0].get('height')
         else:
             defund_current_height = None
 
         if self.username == ADMIN_USERNAME:
-            defund_current_wallet = self.external_api_check('https://defund.api.explorers.guru/api/accounts/defund1xwz3pz5tvpuvegrhkx858rxha9drqe8jf8ludz/tokens')
+            defund_current_wallet = self.external_api_check('https://defund.api.explorers.guru/api/v1/accounts/defund1xwz3pz5tvpuvegrhkx858rxha9drqe8jf8ludz/balance')
         else:
             defund_current_wallet = None
-        if isinstance(defund_current_wallet, list) and len(defund_current_wallet):
-            defund_current_wallet = round(defund_current_wallet[0].get('amount'), 2)
+        if isinstance(defund_current_wallet, dict):
+            defund_current_wallet = round(defund_current_wallet.get('tokens')[0].get('amount'), 2)
         else:
             defund_current_wallet = None
         
@@ -257,7 +256,7 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
 class IronfishNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
-        self.cmds = [". $HOME/.bashrc", ". $HOME/.bash_profile", "ironfish status"]
+        self.cmds = [". $HOME/.bashrc && . $HOME/.bash_profile && ironfish status"]
         super().__init__(ip, username, password, screen, sudo, after_command_wait=6, max_command_wait=18, channel_timeout=30)
 
     def parse_unique_answer(self, answer):
