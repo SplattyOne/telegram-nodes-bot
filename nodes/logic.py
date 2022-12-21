@@ -220,20 +220,22 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         super().__init__(ip, username, password, screen, sudo)
 
     def parse_unique_answer(self, answer):
-        defund_current_height = self.external_api_check('https://defund.api.explorers.guru/api/v1/blocks?count=1')
+        defund_current_height = None
+        try:
+            defund_current_height = self.external_api_check('https://defund.api.explorers.guru/api/v1/blocks?count=1')
+        except:
+            pass
         if isinstance(defund_current_height, list) and len(defund_current_height):
             defund_current_height = defund_current_height[0].get('height')
-        else:
-            defund_current_height = None
 
+        defund_current_wallet = None
         if self.username == ADMIN_USERNAME:
-            defund_current_wallet = self.external_api_check('https://defund.api.explorers.guru/api/v1/accounts/defund1xwz3pz5tvpuvegrhkx858rxha9drqe8jf8ludz/balance')
-        else:
-            defund_current_wallet = None
-        if isinstance(defund_current_wallet, dict):
-            defund_current_wallet = round(defund_current_wallet.get('tokens')[0].get('amount'), 2)
-        else:
-            defund_current_wallet = None
+            try:
+                defund_current_wallet = self.external_api_check('https://defund.api.explorers.guru/api/v1/accounts/defund1xwz3pz5tvpuvegrhkx858rxha9drqe8jf8ludz/balance')
+            except:
+                pass
+            if isinstance(defund_current_wallet, dict):
+                defund_current_wallet = round(defund_current_wallet.get('tokens')[0].get('amount'), 2)
         
         latest_block_height_find = list(filter(lambda x: 'latest_block_height' in x, answer[::-1]))
         if not len(latest_block_height_find):
