@@ -222,11 +222,11 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
     def parse_unique_answer(self, answer):
         defund_current_height = None
         try:
-            defund_current_height = self.external_api_check('https://defund.api.explorers.guru/api/v1/blocks?count=1')
+            defund_current_height = self.external_api_check('https://defund.api.explorers.guru/api/v1/blocks?limit=1')
         except:
             pass
-        if isinstance(defund_current_height, list) and len(defund_current_height):
-            defund_current_height = defund_current_height[0].get('height')
+        if isinstance(defund_current_height, dict) and len(defund_current_height.get('data', [])):
+            defund_current_height = defund_current_height.get('data')[0].get('height')
 
         defund_current_wallet = None
         if self.username == ADMIN_USERNAME:
@@ -248,7 +248,7 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         catching_up = catching_up_find[0].strip().split(' ')[-1]
         if catching_up != 'false':
             return (False, f'Wrong catching_up status {catching_up}, current_block {defund_current_height} latest_block_height {latest_block_height}')
-
+        print(defund_current_height, latest_block_height)
         if defund_current_height and abs(int(defund_current_height) - int(latest_block_height)) > 2000:
             return (False, f'Something wrong in sync process, current_block {defund_current_height}, latest_block_height {latest_block_height}')
         
