@@ -231,7 +231,7 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         defund_current_wallet = None
         if self.username == ADMIN_USERNAME:
             try:
-                defund_current_wallet = self.external_api_check('https://defund.api.explorers.guru/api/v1/accounts/defund1xwz3pz5tvpuvegrhkx858rxha9drqe8jf8ludz/balance')
+                defund_current_wallet = self.external_api_check('https://defund.api.explorers.guru/api/v1/accounts/defund1pkglxk0nr3xxxslcwgtf8d6a9du9u7l59a7552/balance')
             except:
                 pass
             if isinstance(defund_current_wallet, dict) and len(defund_current_wallet.get('tokens', [])):
