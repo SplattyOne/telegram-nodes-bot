@@ -226,7 +226,7 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         except:
             pass
         if isinstance(defund_current_height, dict) and len(defund_current_height.get('data', [])):
-            defund_current_height = defund_current_height.get('data')[0].get('height')
+            defund_current_height = defund_current_height.get('data')[0].get('height', 0)
 
         defund_current_wallet = None
         if self.username == ADMIN_USERNAME:
@@ -234,8 +234,8 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
                 defund_current_wallet = self.external_api_check('https://defund.api.explorers.guru/api/v1/accounts/defund1xwz3pz5tvpuvegrhkx858rxha9drqe8jf8ludz/balance')
             except:
                 pass
-            if isinstance(defund_current_wallet, dict):
-                defund_current_wallet = round(defund_current_wallet.get('tokens')[0].get('amount'), 2)
+            if isinstance(defund_current_wallet, dict) and len(defund_current_wallet.get('tokens', [])):
+                defund_current_wallet = round(defund_current_wallet.get('tokens')[0].get('amount', 0), 2)
         
         latest_block_height_find = list(filter(lambda x: 'latest_block_height' in x, answer[::-1]))
         if not len(latest_block_height_find):
