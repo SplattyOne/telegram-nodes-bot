@@ -255,6 +255,48 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         return (True, f'Node is OK, current_block {defund_current_height} latest_block_height {latest_block_height}, amount: {defund_current_wallet}', defund_current_wallet)
 
 
+class NibiruNodeChecker(BaseNodeCheckerSSH):
+
+    def __init__(self, ip, username, password, screen, sudo):
+        self.cmds = [". $HOME/.bashrc && . $HOME/.profile && nibid status 2>&1 | jq .\"SyncInfo\""]
+        super().__init__(ip, username, password, screen, sudo)
+
+    def parse_unique_answer(self, answer):
+        nibiru_current_height = None
+        try:
+            nibiru_current_height = self.external_api_check('https://nibiru.api.explorers.guru/api/v1/blocks?limit=1')
+        except:
+            pass
+        if isinstance(nibiru_current_height, dict) and len(nibiru_current_height.get('data', [])):
+            nibiru_current_height = nibiru_current_height.get('data')[0].get('height', 0)
+
+        nibiru_current_wallet = None
+        if self.username == ADMIN_USERNAME:
+            try:
+                nibiru_current_wallet = self.external_api_check('https://nibiru.api.explorers.guru/api/v1/accounts/nibi1ttup4wkg4smsvr4aj8huzsywlp7szdwpwr2g0l/balance')
+            except:
+                pass
+            if isinstance(nibiru_current_wallet, dict) and len(nibiru_current_wallet.get('tokens', [])):
+                nibiru_current_wallet = round(nibiru_current_wallet.get('tokens')[0].get('amount', 0), 2)
+        
+        latest_block_height_find = list(filter(lambda x: 'latest_block_height' in x, answer[::-1]))
+        if not len(latest_block_height_find):
+            return (False, f'Wrong latest_block_height_find reply')
+        latest_block_height = latest_block_height_find[0].strip().split(' ')[-1][1:-2]
+
+        catching_up_find = list(filter(lambda x: 'catching_up' in x, answer[::-1]))
+        if not len(catching_up_find):
+            return (False, f'Wrong catching_up reply')
+        catching_up = catching_up_find[0].strip().split(' ')[-1]
+        if catching_up != 'false':
+            return (False, f'Wrong catching_up status {catching_up}, current_block {nibiru_current_height} latest_block_height {latest_block_height}')
+        print(nibiru_current_height, latest_block_height)
+        if nibiru_current_height and abs(int(nibiru_current_height) - int(latest_block_height)) > 2000:
+            return (False, f'Something wrong in sync process, current_block {nibiru_current_height}, latest_block_height {latest_block_height}')
+        
+        return (True, f'Node is OK, current_block {nibiru_current_height} latest_block_height {latest_block_height}, amount: {nibiru_current_wallet}', nibiru_current_wallet)
+
+
 class IronfishNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
@@ -408,6 +450,7 @@ NODE_TYPE_IRONFISH = 'ironfish'
 NODE_TYPE_MASA = 'masa'
 NODE_TYPE_SUI = 'sui'
 NODE_TYPE_SSV = 'ssv'
+NODE_TYPE_NIBIRU = 'nibiru'
 
 NODE_TYPES = {
     NODE_TYPE_APTOS: {'class': AptosNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}'},
@@ -419,7 +462,8 @@ NODE_TYPES = {
     NODE_TYPE_IRONFISH: {'class': IronfishNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_MASA: {'class': MasaNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_SUI: {'class': SuiNodeChecker, 'checker': CHECKER_SSH_CLASS},
-    NODE_TYPE_SSV: {'class': SsvNodeChecker, 'checker': CHECKER_SSH_CLASS}
+    NODE_TYPE_SSV: {'class': SsvNodeChecker, 'checker': CHECKER_SSH_CLASS},
+    NODE_TYPE_NIBIRU: {'class': NibiruNodeChecker, 'checker': CHECKER_SSH_CLASS}
 }
 
 
