@@ -59,9 +59,14 @@ def send_nodes_guru_updates() -> None:
         if len(deviations):
             missed_deviations = deviations.get('missed', [])
             new_deviations = deviations.get('new', [])
-            logger.info(f"Found deviations missed nodes {len(missed_deviations)}, new nodes {len(new_deviations)}, send it in chat")
-            _send_message(user_id=NODES_GURU_CHAT_ID, text=f'Missed nodes: {json.dumps(missed_deviations)}')
-            _send_message(user_id=NODES_GURU_CHAT_ID, text=f'New nodes: {json.dumps(new_deviations)}')
+            updated_deviations = deviations.get('updated', [])
+            logger.info(f"Found deviations missed nodes {len(missed_deviations)}, new nodes {len(new_deviations)}, updated nodes {len(updated_deviations)}, send it to chat")
+            if len(missed_deviations):
+                _send_message(user_id=NODES_GURU_CHAT_ID, text=f'Missed nodes: {json.dumps(missed_deviations, sort_keys=True, indent=2)}')
+            if len(new_deviations):
+                _send_message(user_id=NODES_GURU_CHAT_ID, text=f'New nodes: {json.dumps(new_deviations, sort_keys=True, indent=2)}')
+            if len(updated_deviations):
+                _send_message(user_id=NODES_GURU_CHAT_ID, text=f'Updated nodes: {json.dumps(updated_deviations, sort_keys=True, indent=2)}')
         else:
             logger.info(f"No deviations - nothing to send")
     except Exception as e:
