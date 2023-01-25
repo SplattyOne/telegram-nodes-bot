@@ -74,7 +74,5 @@ def check_nodes_guru_updates():
         projects = new_projects
     elif projects != new_projects:
         deviations = find_deviations(projects, new_projects)
-        projects = new_projects
-    
-    insert_last_projects(projects)
+        insert_last_projects(new_projects)
     return deviations
