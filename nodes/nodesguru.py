@@ -25,7 +25,7 @@ def parse_answer(answer):
 
 def find_updated_keys(val: dict, new_val: dict) -> dict:
     updated_elem = {}
-    keys = set(val.keys() + new_val.keys())
+    keys = set(list(val.keys()) + list(new_val.keys()))
     for key in keys:
         if val.get(key) != new_val.get(key):
             updated_elem[key] = new_val.get(key)
