@@ -403,38 +403,29 @@ class SsvNodeChecker(BaseNodeCheckerSSH):
 class MinimaDockerNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
-        self.cmds = ["su - minima", "docker exec -it minima9001 /bin/sh", "sh /bin/minima", "incentivecash"]
+        self.cmds = ["docker exec -it minima9001 minima", "status"]
         super().__init__(ip, username, password, screen, True)
 
     def parse_unique_answer(self, answer):
 
-        status_find = list(filter(lambda x: 'status' in x, answer[::-1]))
+        status_find = list(filter(lambda x: '"status":' in x, answer))
         if not len(status_find):
             return (False, f'Wrong minima status reply')
         status = status_find[0].strip().split(':')[-1][:-1]
         if status != 'true':
             return (False, f'Wrong minima status reply, {status}')
 
-        daily_rewards = list(filter(lambda x: 'dailyRewards' in x, answer[::-1]))
-        if not len(daily_rewards):
-            return (False, f'Wrong minima daily_rewards status reply')
-        daily_reward = daily_rewards[0].strip().split(':')[-1][:-1]
-        previous_rewards = list(filter(lambda x: 'previousRewards' in x, answer[::-1]))
-        if not len(previous_rewards):
-            return (False, f'Wrong minima previous_rewards status reply')
-        previous_reward = previous_rewards[0].strip().split(':')[-1][:-1]
-        community_rewards = list(filter(lambda x: 'communityRewards' in x, answer[::-1]))
-        if not len(community_rewards):
-            return (False, f'Wrong minima community_rewards status reply')
-        community_reward = community_rewards[0].strip().split(':')[-1][:-1]
-        inviter_rewards = list(filter(lambda x: 'inviterRewards' in x, answer[::-1]))
-        if not len(inviter_rewards):
-            return (False, f'Wrong minima inviter_rewards status reply')
-        inviter_reward = inviter_rewards[0].strip().split(':')[-1][:-1]
+        version_find = list(filter(lambda x: '"version":' in x, answer))
+        if not len(version_find):
+            return (False, f'Wrong minima version reply')
+        version = version_find[0].strip().split(':')[-1][:-1]
 
-        rewards = float(daily_reward) + float(previous_reward) + float(community_reward) + float(inviter_reward)
+        coins_rewards = list(filter(lambda x: '"coins":' in x, answer))
+        coins_reward = 0
+        if len(coins_rewards):
+            coins_reward = coins_rewards[0].strip().split(':')[-1][:-1]
 
-        return (True, f'Node is OK, status {status}, rewards {rewards}', rewards)
+        return (True, f'Node is OK, status {status}, version {version}, coins {coins_reward}', coins_reward)
 
 
 CHECKER_API_CLASS = 'api'
