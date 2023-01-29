@@ -213,6 +213,32 @@ class StarknetNodeChecker(BaseNodeCheckerSSH):
         return (True, f'Node is OK, active (running)', 0)
 
 
+class AleoNodeChecker(BaseNodeCheckerSSH):
+
+    def __init__(self, ip, username, password, screen, sudo):
+        self.cmds = ["systemctl status 1to-miner | grep Active"]
+        super().__init__(ip, username, password, screen, True)
+
+    def parse_unique_answer(self, answer):
+        
+        active_find = list(filter(lambda x: 'Active:' in x, answer[::-1]))
+        if not len(active_find):
+            return (False, f'Wrong active reply')
+        if not 'active (running)' in active_find[0].strip():
+            return (False, f'Wrong active node status')
+
+        aleo_current_wallet = None
+        if self.username == ADMIN_USERNAME:
+            try:
+                aleo_current_wallet_check = self.external_api_check('https://api.aleo1.to/v1/wallets/aleo1wswn9mlf280tmyu653uddrcrh7jdtxfwheunqnjkxc4t0yu6nu9qsw4pe7/')
+            except:
+                pass
+            if isinstance(aleo_current_wallet_check, dict):
+                aleo_current_wallet = round(aleo_current_wallet_check.get('balance', {}).get('total', 0), 2)
+
+        return (True, f'Node is OK, active (running), balance {aleo_current_wallet}', aleo_current_wallet)
+
+
 class DefundNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
@@ -231,11 +257,11 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         defund_current_wallet = None
         if self.username == ADMIN_USERNAME:
             try:
-                defund_current_wallet = self.external_api_check('https://defund.api.explorers.guru/api/v1/accounts/defund1pkglxk0nr3xxxslcwgtf8d6a9du9u7l59a7552/balance')
+                defund_current_wallet_check = self.external_api_check('https://defund.api.explorers.guru/api/v1/accounts/defund1pkglxk0nr3xxxslcwgtf8d6a9du9u7l59a7552/balance')
             except:
                 pass
-            if isinstance(defund_current_wallet, dict) and len(defund_current_wallet.get('tokens', [])):
-                defund_current_wallet = round(defund_current_wallet.get('tokens')[0].get('amount', 0), 2)
+            if isinstance(defund_current_wallet_check, dict) and len(defund_current_wallet_check.get('tokens', [])):
+                defund_current_wallet = round(defund_current_wallet_check.get('tokens')[0].get('amount', 0), 2)
         
         latest_block_height_find = list(filter(lambda x: 'latest_block_height' in x, answer[::-1]))
         if not len(latest_block_height_find):
@@ -442,6 +468,7 @@ NODE_TYPE_MASA = 'masa'
 NODE_TYPE_SUI = 'sui'
 NODE_TYPE_SSV = 'ssv'
 NODE_TYPE_NIBIRU = 'nibiru'
+NODE_TYPE_ALEO = 'aleo'
 
 NODE_TYPES = {
     NODE_TYPE_APTOS: {'class': AptosNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}'},
@@ -454,7 +481,8 @@ NODE_TYPES = {
     NODE_TYPE_MASA: {'class': MasaNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_SUI: {'class': SuiNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_SSV: {'class': SsvNodeChecker, 'checker': CHECKER_SSH_CLASS},
-    NODE_TYPE_NIBIRU: {'class': NibiruNodeChecker, 'checker': CHECKER_SSH_CLASS}
+    NODE_TYPE_NIBIRU: {'class': NibiruNodeChecker, 'checker': CHECKER_SSH_CLASS},
+    NODE_TYPE_ALEO: {'class': AleoNodeChecker, 'checker': CHECKER_SSH_CLASS}
 }
 
 
