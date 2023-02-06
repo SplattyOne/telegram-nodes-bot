@@ -239,6 +239,33 @@ class AleoNodeChecker(BaseNodeCheckerSSH):
         return (True, f'Node is OK, active (running), balance {aleo_current_wallet}', aleo_current_wallet)
 
 
+class ShardeumNodeChecker(BaseNodeCheckerSSH):
+
+    def __init__(self, ip, username, password, screen, sudo):
+        self.cmds = ["/root/.shardeum/shell.sh", "operator-cli status"]
+        super().__init__(ip, username, password, screen, True)
+
+    def parse_unique_answer(self, answer):
+        
+        state_find = list(filter(lambda x: 'state:' in x, answer))
+        if not len(state_find):
+            return (False, f'Wrong state reply')
+        if not 'standby' in state_find[0].strip():
+            return (False, f'Wrong state node status {state_find[0].strip()}')
+        
+        stake_find = list(filter(lambda x: 'lockedStake:' in x, answer))
+        if not len(stake_find):
+            return (False, f'Wrong stake reply')
+        stake = float(stake_find[0].strip().split(': ')[-1][1:-1])
+        
+        rewards_find = list(filter(lambda x: 'currentRewards:' in x, answer))
+        if not len(rewards_find):
+            return (False, f'Wrong rewards reply')
+        rewards = float(rewards_find[0].strip().split(': ')[-1][1:-1])
+
+        return (True, f'Node is OK, state standby, stake {stake}, rewards {rewards}', rewards)
+
+
 class DefundNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
@@ -469,6 +496,7 @@ NODE_TYPE_SUI = 'sui'
 NODE_TYPE_SSV = 'ssv'
 NODE_TYPE_NIBIRU = 'nibiru'
 NODE_TYPE_ALEO = 'aleo'
+NODE_TYPE_SHARDEUM = 'shardeum'
 
 NODE_TYPES = {
     NODE_TYPE_APTOS: {'class': AptosNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}'},
@@ -482,7 +510,8 @@ NODE_TYPES = {
     NODE_TYPE_SUI: {'class': SuiNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_SSV: {'class': SsvNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_NIBIRU: {'class': NibiruNodeChecker, 'checker': CHECKER_SSH_CLASS},
-    NODE_TYPE_ALEO: {'class': AleoNodeChecker, 'checker': CHECKER_SSH_CLASS}
+    NODE_TYPE_ALEO: {'class': AleoNodeChecker, 'checker': CHECKER_SSH_CLASS},
+    NODE_TYPE_SHARDEUM: {'class': ShardeumNodeChecker, 'checker': CHECKER_SSH_CLASS},
 }
 
 
