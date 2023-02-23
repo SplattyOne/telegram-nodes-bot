@@ -350,6 +350,49 @@ class NibiruNodeChecker(BaseNodeCheckerSSH):
         return (True, f'Node is OK, current_block {nibiru_current_height} latest_block_height {latest_block_height}, amount: {nibiru_current_wallet}', nibiru_current_wallet)
 
 
+class LavaNodeChecker(BaseNodeCheckerSSH):
+
+    def __init__(self, ip, username, password, screen, sudo):
+        self.cmds = [". $HOME/.bashrc && . $HOME/.profile && lavad status 2>&1 | jq .\"SyncInfo\""]
+        super().__init__(ip, username, password, screen, sudo)
+
+    def parse_unique_answer(self, answer):
+        lava_current_height = None
+        try:
+            lava_current_height = self.external_api_check('https://lava.api.explorers.guru/api/v1/blocks?limit=1')
+        except:
+            pass
+        if isinstance(lava_current_height, dict) and len(lava_current_height.get('data', [])):
+            lava_current_height = lava_current_height.get('data')[0].get('height', 0)
+
+        lava_current_wallet = None
+        if self.username == ADMIN_USERNAME:
+            try:
+                lava_current_wallet = self.external_api_check('https://lava.api.explorers.guru/api/v1/accounts/lava@1vpffj5dgvvw9ae7s0ruf3jc84ff6hwgef704tt/balance')
+            except:
+                pass
+            if isinstance(lava_current_wallet, dict) and len(lava_current_wallet.get('tokens', [])):
+                lava_current_wallet = round(lava_current_wallet.get('tokens')[0].get('amount', 0), 2)
+        
+        latest_block_height_find = list(filter(lambda x: 'latest_block_height' in x, answer[::-1]))
+        if not len(latest_block_height_find):
+            return (False, f'Wrong latest_block_height_find reply')
+        latest_block_height = latest_block_height_find[0].strip().split(' ')[-1][1:-2]
+
+        catching_up_find = list(filter(lambda x: 'catching_up' in x, answer[::-1]))
+        if not len(catching_up_find):
+            return (False, f'Wrong catching_up reply')
+        catching_up = catching_up_find[0].strip().split(' ')[-1]
+        if catching_up != 'false':
+            return (False, f'Wrong catching_up status {catching_up}, current_block {lava_current_height} latest_block_height {latest_block_height}')
+        print(lava_current_height, latest_block_height)
+        if lava_current_height and abs(int(lava_current_height) - int(latest_block_height)) > 2000:
+            return (False, f'Something wrong in sync process, current_block {lava_current_height}, latest_block_height {latest_block_height}')
+        
+        return (True, f'Node is OK, current_block {lava_current_height} latest_block_height {latest_block_height}, amount: {lava_current_wallet}', lava_current_wallet)
+
+
+
 class IronfishNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
@@ -497,6 +540,7 @@ NODE_TYPE_SSV = 'ssv'
 NODE_TYPE_NIBIRU = 'nibiru'
 NODE_TYPE_ALEO = 'aleo'
 NODE_TYPE_SHARDEUM = 'shardeum'
+NODE_TYPE_LAVA = 'lava'
 
 NODE_TYPES = {
     NODE_TYPE_APTOS: {'class': AptosNodeChecker, 'checker': CHECKER_API_CLASS, 'api': 'http://{}:{}'},
@@ -512,6 +556,7 @@ NODE_TYPES = {
     NODE_TYPE_NIBIRU: {'class': NibiruNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_ALEO: {'class': AleoNodeChecker, 'checker': CHECKER_SSH_CLASS},
     NODE_TYPE_SHARDEUM: {'class': ShardeumNodeChecker, 'checker': CHECKER_SSH_CLASS},
+    NODE_TYPE_LAVA: {'class': LavaNodeChecker, 'checker': CHECKER_SSH_CLASS},
 }
 
 
