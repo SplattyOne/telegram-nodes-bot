@@ -251,9 +251,10 @@ class ShardeumNodeChecker(BaseNodeCheckerSSH):
         if not len(state_find):
             return (False, f'Wrong state reply')
         if not 'standby' in state_find[0].strip():
-            # Try to restart node
-            self.cmds = ["/root/.shardeum/shell.sh", "operator-cli start"]
-            self.health_check()
+            if self.username == ADMIN_USERNAME:
+                # Try to restart node
+                self.cmds = ["/root/.shardeum/shell.sh", "export APP_IP=\"95.165.31.167\"", "operator-cli start"]
+                self.health_check()
             return (False, f'Wrong state node status {state_find[0].strip()}')
         
         stake_find = list(filter(lambda x: 'lockedStake:' in x, answer))
