@@ -250,7 +250,7 @@ class ShardeumNodeChecker(BaseNodeCheckerSSH):
         state_find = list(filter(lambda x: 'state:' in x, answer))
         if not len(state_find):
             return (False, f'Wrong state reply')
-        if not 'standby' in state_find[0].strip():
+        if not 'standby' in state_find[0].strip() and not 'active' in state_find[0].strip():
             if self.username == ADMIN_USERNAME:
                 # Try to restart node
                 self.cmds = ["/root/.shardeum/shell.sh", "export APP_IP=\"95.165.31.167\"", "operator-cli start"]
