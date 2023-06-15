@@ -546,7 +546,7 @@ class SsvNodeChecker(BaseNodeCheckerSSH):
 class MinimaDockerNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
-        self.cmds = [r'docker ps --filter status=running --format "table {{.Names}}\t{{.Status}}']
+        self.cmds = [r'docker ps --filter status=running --format "table {{.Names}}\t{{.Status}}"']
         super().__init__(ip, username, password, screen, True)
 
     def parse_unique_answer(self, answer):
