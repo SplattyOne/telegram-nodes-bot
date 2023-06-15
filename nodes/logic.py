@@ -324,7 +324,7 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
         if catching_up != 'false':
             return (False, f'Wrong catching_up status {catching_up}, current_block {defund_current_height} latest_block_height {latest_block_height}')
         print(defund_current_height, latest_block_height)
-        if defund_current_height and abs(int(defund_current_height) - int(latest_block_height)) > 2000:
+        if defund_current_height and abs(int(defund_current_height) - int(latest_block_height)) > 30000:
             return (False, f'Something wrong in sync process, current_block {defund_current_height}, latest_block_height {latest_block_height}')
 
         return (True, f'Node is OK, current_block {defund_current_height} latest_block_height {latest_block_height}, amount: {defund_current_wallet}', defund_current_wallet)
