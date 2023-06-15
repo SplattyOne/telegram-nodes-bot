@@ -130,11 +130,11 @@ class AptosNodeChecker(BaseNodeCheckerAPI):
 
         ledger_version = answer.get('ledger_version')
         if not ledger_version:
-            return (False, f'Wrong aptos ledger_version reply')
+            return (False, 'Wrong aptos ledger_version reply')
 
         ledger_timestamp = answer.get('ledger_timestamp')
         if not ledger_timestamp:
-            return (False, f'Wrong aptos ledger_timestamp reply')
+            return (False, 'Wrong aptos ledger_timestamp reply')
         ledger_timestamp_dt = datetime.fromtimestamp(
             int(ledger_timestamp) // 1000 // 1000)
 
@@ -162,7 +162,8 @@ class MinimaNodeChecker(BaseNodeCheckerAPI):
 class MassaNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
-        # self.cmds = ['. <(wget -qO- https://raw.githubusercontent.com/SecorD0/Massa/main/insert_variables.sh)', 'massa_node_info']
+        # self.cmds = ['. <(wget -qO- https://raw.githubusercontent.com/SecorD0/Massa/main/insert_variables.sh)',
+        # 'massa_node_info']
         self.cmds = [
             "cd $HOME/massa/massa-client/ && ./massa-client -p $(cat $HOME/massapasswd) wallet_info"]
         super().__init__(ip, username, password, screen, sudo)
@@ -175,18 +176,18 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
         # active_nodes_in = active_nodes_in_find[0].strip().split(' ')[-1]
         # active_nodes_out = active_nodes_out_find[0].strip().split(' ')[-1]
         rolls_find = list(filter(lambda x: 'Rolls:' in x, answer[::-1]))
-        if not len(rolls_find):
-            return (False, f'Wrong rolls reply')
+        if len(rolls_find) == 0:
+            return (False, 'Wrong rolls reply')
         parse_rolls = rolls_find[0].strip().split(', ')
         if len(parse_rolls) < 3:
-            return (False, f'Wrong rolls string count reply')
+            return (False, 'Wrong rolls string count reply')
 
         active_rolls = parse_rolls[0].split('=')[-1]
         candidate_rolls = parse_rolls[2].split('=')[-1]
 
         balance_find = list(filter(lambda x: 'Balance:' in x, answer[::-1]))
         if not len(balance_find):
-            return (False, f'Wrong balance reply')
+            return (False, 'Wrong balance reply')
         balance = balance_find[0].strip().split(', ')[-1].split('=')[-1]
 
         if int(active_rolls) < 1:
@@ -195,7 +196,9 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
             return (False, f'Wrong candidate rolls count {candidate_rolls}')
         # if int(active_nodes_in) + int(active_nodes_out) < 1:
         #     return (False, f'Wrong active nodes count {active_nodes_in}(in) | {active_nodes_out}(out)')
-        return (True, f'Node is OK, rolls active: {active_rolls}, rolls candidate: {candidate_rolls}, balance: {balance}', balance)
+        return (True,
+                f'Node is OK, rolls active: {active_rolls}, rolls candidate: {candidate_rolls}, balance: {balance}',
+                balance)
 
 
 class StarknetNodeChecker(BaseNodeCheckerSSH):
@@ -208,7 +211,7 @@ class StarknetNodeChecker(BaseNodeCheckerSSH):
 
         active_find = list(filter(lambda x: 'Active:' in x, answer[::-1]))
         if len(active_find) == 0:
-            return (False, f'Wrong active reply')
+            return (False, 'Wrong active reply')
         if 'active (running)' not in active_find[0].strip():
             return (False, 'Wrong active node status')
 
@@ -359,14 +362,14 @@ class NibiruNodeChecker(BaseNodeCheckerSSH):
         latest_block_height_find = list(
             filter(lambda x: 'latest_block_height' in x, answer[::-1]))
         if not len(latest_block_height_find):
-            return (False, f'Wrong latest_block_height_find reply')
+            return (False, 'Wrong latest_block_height_find reply')
         latest_block_height = latest_block_height_find[0].strip().split(
             ' ')[-1][1:-2]
 
         catching_up_find = list(
             filter(lambda x: 'catching_up' in x, answer[::-1]))
         if not len(catching_up_find):
-            return (False, f'Wrong catching_up reply')
+            return (False, 'Wrong catching_up reply')
         catching_up = catching_up_find[0].strip().split(' ')[-1]
         if catching_up != 'false':
             return (False, f'Wrong catching_up status {catching_up}, current_block {nibiru_current_height} latest_block_height {latest_block_height}')
@@ -543,29 +546,29 @@ class SsvNodeChecker(BaseNodeCheckerSSH):
 class MinimaDockerNodeChecker(BaseNodeCheckerSSH):
 
     def __init__(self, ip, username, password, screen, sudo):
-        self.cmds = ["docker exec -it minima9001 minima", "status"]
+        self.cmds = [r'docker ps --filter status=running --format "table {{.Names}}\t{{.Status}}']
         super().__init__(ip, username, password, screen, True)
 
     def parse_unique_answer(self, answer):
 
-        status_find = list(filter(lambda x: '"status":' in x, answer))
+        status_find = list(filter(lambda x: 'minima9001' in x, answer))
         if not len(status_find):
             return (False, 'Wrong minima status reply')
-        status = status_find[0].strip().split(':')[-1][:-1]
-        if status != 'true':
-            return (False, f'Wrong minima status reply, {status}')
+        status = status_find[0].strip()
+        # if status != 'true':
+        #     return (False, f'Wrong minima status reply, {status}')
 
-        version_find = list(filter(lambda x: '"version":' in x, answer))
-        if not len(version_find):
-            return (False, 'Wrong minima version reply')
-        version = version_find[0].strip().split(':')[-1][:-1]
+        # version_find = list(filter(lambda x: '"version":' in x, answer))
+        # if not len(version_find):
+        #     return (False, 'Wrong minima version reply')
+        # version = version_find[0].strip().split(':')[-1][:-1]
 
-        coins_rewards = list(filter(lambda x: '"coins":' in x, answer))
-        coins_reward = 0
-        if len(coins_rewards):
-            coins_reward = coins_rewards[0].strip().split(':')[-1][:-1]
+        # coins_rewards = list(filter(lambda x: '"coins":' in x, answer))
+        # coins_reward = 0
+        # if len(coins_rewards):
+        #     coins_reward = coins_rewards[0].strip().split(':')[-1][:-1]
 
-        return (True, f'Node is OK, status {status}, version {version}, coins {coins_reward}', coins_reward)
+        return (True, f'Node is OK, status {status}', 0)
 
 
 CHECKER_API_CLASS = 'api'
@@ -775,7 +778,8 @@ def is_valid_ip(ip):
     return bool(m) and all(map(lambda n: 0 <= int(n) <= 255, m.groups()))
 
 
-def create_user_node(user_id, node_type, node_ip, node_port=None, ssh_username=None, ssh_password=None, screen_name=None, sudo_flag=False):
+def create_user_node(user_id, node_type, node_ip, node_port=None,
+                     ssh_username=None, ssh_password=None, screen_name=None, sudo_flag=False):
 
     if not is_valid_ip(node_ip):
         return f'Wrong node_ip, not valid: {node_ip}'
