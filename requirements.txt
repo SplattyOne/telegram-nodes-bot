@@ -1,32 +1,32 @@
-pytz
-requests
-python-dotenv
-ipython
+pytz==2022.1
+requests==2.27.1
+python-dotenv==0.20.0
+ipython==8.2.0
 
 # Django
 django
-django-timezone-field 
-django-cors-headers
-django-debug-toolbar
-whitenoise
+django-timezone-field==4.2.3
+django-cors-headers==3.11.0
+django-debug-toolbar==3.2.4
+whitenoise==6.0.0
 
 # Django 3.0 async requirements
 gunicorn
 uvicorn
 uvloop
-httptools
+httptools==0.4.0
 
 # Databases
-psycopg2-binary
-dj-database-url
+psycopg2-binary==2.9.3
+dj-database-url==0.5.0
 
 # Distributed tasks
-celery
-redis
-django-celery-beat
+celery==5.2.6
+redis==4.2.2
+django-celery-beat==2.2.1
 
 # Telegram
-python-telegram-bot
+python-telegram-bot==13.11
 
 # Nodes
-paramiko
+paramiko==2.10.3
