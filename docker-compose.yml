@@ -1,6 +1,7 @@
 version: "3.8"
 
 services:
+
   web:
     build: .
     container_name: dtb_django
@@ -14,7 +15,8 @@ services:
     external_links:
       - Redis
       - postgresql14
-    restart: always
+    restart: unless-stopped
+
   bot:
     build: .
     container_name: dtb_bot
@@ -26,7 +28,8 @@ services:
     external_links:
       - Redis
       - postgresql14
-    restart: always
+    restart: unless-stopped
+
   celery:
     build: .
     container_name: dtb_celery
@@ -40,7 +43,8 @@ services:
     external_links:
       - Redis
       - postgresql14
-    restart: always
+    restart: unless-stopped
+
   celery-beat:
     build: .
     container_name: dtb_beat
@@ -55,4 +59,4 @@ services:
     external_links:
       - Redis
       - postgresql14
-    restart: always
+    restart: unless-stopped

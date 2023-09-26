@@ -33,7 +33,7 @@ class SSHConnector():
         self.channel.get_pty()
         self.channel.settimeout(self.channel_timeout)
 
-    def send_command(self, cmd) -> None:
+    def send_command(self, cmd: str) -> None:
         if not self.first_cmd_flag:
             self.first_cmd_flag = True
             self.connect()
@@ -43,7 +43,7 @@ class SSHConnector():
             self.channel.send(cmd + '\n')
             self.wait_ready(cmd)
 
-    def wait_ready(self, cmd) -> None:
+    def wait_ready(self, cmd: str) -> None:
         sleep(3)
         dt_start = datetime.now()
         while not self.channel.recv_ready():
@@ -56,17 +56,17 @@ class SSHConnector():
     def enter_sudo(self) -> None:
         if self.sudo_flag:
             return
-        self.send_command(f'sudo su')
+        self.send_command('sudo su')
         self.send_command(self.password)
         self.sudo_flag = True
 
-    def enter_screen(self, screen) -> None:
+    def enter_screen(self, screen: str) -> None:
         if self.screen_flag:
             return
         self.send_command(f'screen -dr {screen}')
         self.screen_flag = True
 
-    def exec_commands(self, cmds, screen=False, sudo=False) -> str:
+    def exec_commands(self, cmds: list[str], screen: bool = False, sudo: bool = False) -> str:
         if sudo:
             self.enter_sudo()
         if screen:
@@ -77,7 +77,7 @@ class SSHConnector():
         return self.parse_answer(self.channel.recv(9999).decode())
 
     @staticmethod
-    def parse_answer(answer):
+    def parse_answer(answer: str) -> list[str]:
         ansi_escape = re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
         answer_parsed = ansi_escape.sub('', answer)
 

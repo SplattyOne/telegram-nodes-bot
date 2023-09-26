@@ -58,24 +58,24 @@ class BaseNodeCheckerAPI():
             return (False, f'Wrong request answer parsing {str(e)[:MAX_ERROR_LEN]}')
 
     @abstractmethod
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
         pass
 
 
 class BaseNodeCheckerSSH():
-    node_type = None
-    sudo = False
-    screen = False
-    cmds = None
+    node_type: str = None
+    sudo: bool = False
+    screen: bool = False
+    cmds: list = None
 
-    def __init__(self, ip, username, password, screen, sudo, **kwargs):
+    def __init__(self, ip: str, username: str, password: str, screen: bool, sudo: bool, **kwargs) -> None:
         self.ssh = SSHConnector(ip, username, password, **kwargs)
         self.screen = screen
         self.sudo = sudo
         self.username = username
 
     @staticmethod
-    def external_api_check(url):
+    def external_api_check(url: str) -> dict:
         try:
             return requests.get(url, timeout=15).json()
         except Exception:
@@ -94,7 +94,7 @@ class BaseNodeCheckerSSH():
             return (False, f'Wrong ssh answer parsing {traceback.format_exc()}')
 
     @abstractmethod
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
         pass
 
 
@@ -104,7 +104,7 @@ class AptosNodeChecker(BaseNodeCheckerAPI):
         self.node_type = NODE_TYPE_APTOS
         super().__init__(ip, port)
 
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
         # aptos_ledger_version = self.external_api_check('https://fullnode.devnet.aptoslabs.com/').get('ledger_version')
 
         # sync_lines = list(filter(lambda x: 'aptos_state_sync_version' in x, answer.split('\n')))
@@ -147,7 +147,7 @@ class MinimaNodeChecker(BaseNodeCheckerAPI):
         self.node_type = NODE_TYPE_MINIMA
         super().__init__(ip, port)
 
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
         answer = json.loads(answer)
         if answer.get('status') is not True:
             return (False, f'Node status is note True {answer.get("status")}')
@@ -161,14 +161,14 @@ class MinimaNodeChecker(BaseNodeCheckerAPI):
 
 class MassaNodeChecker(BaseNodeCheckerSSH):
 
-    def __init__(self, ip, username, password, screen, sudo):
+    def __init__(self, ip: str, username: str, password: str, screen: bool, sudo: bool):
         # self.cmds = ['. <(wget -qO- https://raw.githubusercontent.com/SecorD0/Massa/main/insert_variables.sh)',
         # 'massa_node_info']
         self.cmds = [
             "cd $HOME/massa/massa-client/ && ./massa-client -p $(cat $HOME/massapasswd) wallet_info"]
         super().__init__(ip, username, password, screen, sudo)
 
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
         # active_nodes_in_find = list(filter(lambda x: 'Входящих подключений:' in x, answer[::-1]))
         # active_nodes_out_find = list(filter(lambda x: 'Исходящих подключений:' in x, answer[::-1]))
         # if not len(active_nodes_in_find) or not len(active_nodes_out_find):
@@ -203,11 +203,11 @@ class MassaNodeChecker(BaseNodeCheckerSSH):
 
 class StarknetNodeChecker(BaseNodeCheckerSSH):
 
-    def __init__(self, ip, username, password, screen, sudo):
+    def __init__(self, ip: str, username: str, password: str, screen: bool, sudo: bool):
         self.cmds = ["systemctl status starknetd | grep Active"]
         super().__init__(ip, username, password, screen, True)
 
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
 
         active_find = list(filter(lambda x: 'Active:' in x, answer[::-1]))
         if len(active_find) == 0:
@@ -220,11 +220,11 @@ class StarknetNodeChecker(BaseNodeCheckerSSH):
 
 class AleoNodeChecker(BaseNodeCheckerSSH):
 
-    def __init__(self, ip, username, password, screen, sudo):
+    def __init__(self, ip: str, username: str, password: str, screen: bool, sudo: bool):
         self.cmds = ["systemctl status 1to-miner | grep Active"]
         super().__init__(ip, username, password, screen, True)
 
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
 
         active_find = list(filter(lambda x: 'Active:' in x, answer[::-1]))
         if not len(active_find):
@@ -248,11 +248,11 @@ class AleoNodeChecker(BaseNodeCheckerSSH):
 
 class ShardeumNodeChecker(BaseNodeCheckerSSH):
 
-    def __init__(self, ip, username, password, screen, sudo):
+    def __init__(self, ip: str, username: str, password: str, screen: bool, sudo: bool):
         self.cmds = ["/root/.shardeum/shell.sh", "operator-cli status"]
         super().__init__(ip, username, password, screen, True)
 
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
 
         state_find = list(filter(lambda x: 'state:' in x, answer))
         if not len(state_find):
@@ -282,12 +282,12 @@ class ShardeumNodeChecker(BaseNodeCheckerSSH):
 
 class DefundNodeChecker(BaseNodeCheckerSSH):
 
-    def __init__(self, ip, username, password, screen, sudo):
+    def __init__(self, ip: str, username: str, password: str, screen: bool, sudo: bool):
         self.cmds = [
             ". $HOME/.bashrc && . $HOME/.profile && defundd status 2>&1 | jq .\"SyncInfo\""]
         super().__init__(ip, username, password, screen, sudo)
 
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
         defund_current_height = None
         try:
             defund_current_height = self.external_api_check(
@@ -332,39 +332,36 @@ class DefundNodeChecker(BaseNodeCheckerSSH):
 
 class NibiruNodeChecker(BaseNodeCheckerSSH):
 
-    def __init__(self, ip, username, password, screen, sudo):
+    def __init__(self, ip: str, username: str, password: str, screen: bool, sudo: bool):
         self.cmds = [
             ". $HOME/.bashrc && . $HOME/.profile && nibid status 2>&1 | jq .\"SyncInfo\""]
         super().__init__(ip, username, password, screen, sudo)
 
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
         nibiru_current_height = None
         try:
-            nibiru_current_height = self.external_api_check(
-                'https://nibiru.api.explorers.guru/api/v1/blocks?limit=1')
+            nibiru_current_height = self.external_api_check('https://nibiru.api.explorers.guru/api/v1/blocks?limit=1')
         except Exception:
             pass
         if isinstance(nibiru_current_height, dict) and len(nibiru_current_height.get('data', [])):
-            nibiru_current_height = nibiru_current_height.get('data')[
-                0].get('height', 0)
+            nibiru_current_height = nibiru_current_height.get('data')[0].get('height', 0)
 
         nibiru_current_wallet = None
         if self.username == ADMIN_USERNAME:
             try:
                 nibiru_current_wallet = self.external_api_check(
-                    'https://nibiru.api.explorers.guru/api/v1/accounts/nibi1ttup4wkg4smsvr4aj8huzsywlp7szdwpwr2g0l/balance')
+                    'https://nibiru.api.explorers.guru/api/v1/accounts/nibi1ttup4wkg4smsvr4aj8huzsywlp7szdwpwr2g0l/balance'
+                )
             except Exception:
                 pass
             if isinstance(nibiru_current_wallet, dict) and len(nibiru_current_wallet.get('tokens', [])):
-                nibiru_current_wallet = round(
-                    nibiru_current_wallet.get('tokens')[0].get('amount', 0), 2)
+                nibiru_current_wallet = round(nibiru_current_wallet.get('tokens')[0].get('amount', 0), 2)
 
         latest_block_height_find = list(
             filter(lambda x: 'latest_block_height' in x, answer[::-1]))
         if not len(latest_block_height_find):
             return (False, 'Wrong latest_block_height_find reply')
-        latest_block_height = latest_block_height_find[0].strip().split(
-            ' ')[-1][1:-2]
+        latest_block_height = latest_block_height_find[0].strip().split(' ')[-1][1:-2]
 
         catching_up_find = list(
             filter(lambda x: 'catching_up' in x, answer[::-1]))
@@ -382,16 +379,14 @@ class NibiruNodeChecker(BaseNodeCheckerSSH):
 
 class LavaNodeChecker(BaseNodeCheckerSSH):
 
-    def __init__(self, ip, username, password, screen, sudo):
-        self.cmds = [
-            ". $HOME/.bashrc && . $HOME/.profile && lavad status 2>&1 | jq .\"SyncInfo\""]
+    def __init__(self, ip: str, username: str, password: str, screen: bool, sudo: bool):
+        self.cmds = [". $HOME/.bashrc && . $HOME/.profile && lavad status 2>&1 | jq .\"SyncInfo\""]
         super().__init__(ip, username, password, screen, sudo)
 
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
         lava_current_height = None
         try:
-            lava_current_height = self.external_api_check(
-                'https://lava.api.explorers.guru/api/v1/blocks?limit=1')
+            lava_current_height = self.external_api_check('https://lava.api.explorers.guru/api/v1/blocks?limit=1')
         except Exception:
             pass
         if isinstance(lava_current_height, dict) and len(lava_current_height.get('data', [])):
@@ -401,20 +396,17 @@ class LavaNodeChecker(BaseNodeCheckerSSH):
         lava_current_wallet = None
         if self.username == ADMIN_USERNAME:
             try:
-                lava_current_wallet = self.external_api_check(
-                    'https://lava.api.explorers.guru/api/v1/accounts/lava@1vpffj5dgvvw9ae7s0ruf3jc84ff6hwgef704tt/balance')
+                lava_current_wallet = self.external_api_check('https://lava.api.explorers.guru/api/v1/accounts/lava@1vpffj5dgvvw9ae7s0ruf3jc84ff6hwgef704tt/balance')
             except Exception:
                 pass
             if isinstance(lava_current_wallet, dict) and len(lava_current_wallet.get('tokens', [])):
                 lava_current_wallet = round(lava_current_wallet.get('tokens')[
                                             0].get('amount', 0), 2)
 
-        latest_block_height_find = list(
-            filter(lambda x: 'latest_block_height' in x, answer[::-1]))
+        latest_block_height_find = list(filter(lambda x: 'latest_block_height' in x, answer[::-1]))
         if not len(latest_block_height_find):
             return (False, 'Wrong latest_block_height_find reply')
-        latest_block_height = latest_block_height_find[0].strip().split(
-            ' ')[-1][1:-2]
+        latest_block_height = latest_block_height_find[0].strip().split(' ')[-1][1:-2]
 
         catching_up_find = list(
             filter(lambda x: 'catching_up' in x, answer[::-1]))
@@ -432,27 +424,25 @@ class LavaNodeChecker(BaseNodeCheckerSSH):
 
 class IronfishNodeChecker(BaseNodeCheckerSSH):
 
-    def __init__(self, ip, username, password, screen, sudo):
-        self.cmds = [
-            ". $HOME/.bashrc && . $HOME/.bash_profile && ironfish status"]
+    def __init__(self, ip: str, username: str, password: str, screen: bool, sudo: bool):
+        self.cmds = [". $HOME/.bashrc && . $HOME/.bash_profile && ironfish status"]
         super().__init__(ip, username, password, screen, sudo,
                          after_command_wait=6, max_command_wait=18,
                          channel_timeout=30)
 
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
         node_status_find = list(filter(lambda x: 'Node ' in x, answer))
         if not len(node_status_find):
             return (False, 'Wrong node_status reply')
-        node_status = remove_multiple_spaces(
-            node_status_find[0].strip()).split(' ')[-1]
-        if node_status != 'STARTED':
+        node_status = remove_multiple_spaces(node_status_find[0].strip()).split(' ')[-1]
+        if node_status.lower() != 'started':
             return (False, f'Wrong node_status status, {node_status}')
 
         node_syncer_find = list(filter(lambda x: 'Syncer ' in x, answer))
         if not len(node_syncer_find):
             return (False, 'Wrong node_syncer reply')
         node_syncer = remove_multiple_spaces(node_syncer_find[0].strip())
-        if 'IDLE' not in node_syncer:
+        if 'idle' not in node_syncer.lower():
             return (False, f'Wrong node_syncer progress, {node_syncer}')
 
         return (True, f'Node is OK, status {node_status}, {node_syncer}', 0)
@@ -460,7 +450,7 @@ class IronfishNodeChecker(BaseNodeCheckerSSH):
 
 class MasaNodeChecker(BaseNodeCheckerSSH):
 
-    def __init__(self, ip, username, password, screen, sudo):
+    def __init__(self, ip: str, username: str, password: str, screen: bool, sudo: bool):
         self.cmds = ["docker exec -it masa-node-v10_masa-node_1 geth attach /qdata/dd/geth.ipc",
                      "net.listening", "net.peerCount", "eth.syncing", "exit"]
         super().__init__(ip, username, password, screen, sudo)
@@ -473,7 +463,7 @@ class MasaNodeChecker(BaseNodeCheckerSSH):
                 return answer[index+1]
         return False
 
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
         node_listen_find = self.get_next_to_finded_line(
             answer, 'net.listening')
         if not node_listen_find:
@@ -512,12 +502,12 @@ class MasaNodeChecker(BaseNodeCheckerSSH):
 
 class SuiNodeChecker(BaseNodeCheckerSSH):
 
-    def __init__(self, ip, username, password, screen, sudo):
+    def __init__(self, ip: str, username: str, password: str, screen: bool, sudo: bool):
         self.cmds = [
             "curl -s -X POST http://127.0.0.1:9000 -H 'Content-Type: application/json' -d '{ \"jsonrpc\":\"2.0\", \"method\":\"rpc.discover\",\"id\":1}' | jq .result.info"]
         super().__init__(ip, username, password, screen, False)
 
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
         version_find = list(filter(lambda x: 'version' in x, answer[::-1]))
         if not len(version_find):
             return (False, 'Wrong sui version reply')
@@ -528,11 +518,11 @@ class SuiNodeChecker(BaseNodeCheckerSSH):
 
 class SsvNodeChecker(BaseNodeCheckerSSH):
 
-    def __init__(self, ip, username, password, screen, sudo):
+    def __init__(self, ip: str, username: str, password: str, screen: bool, sudo: bool):
         self.cmds = ["docker inspect ssv_node | grep Status"]
         super().__init__(ip, username, password, screen, sudo)
 
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
         status_find = list(filter(lambda x: 'Status' in x, answer[::-1]))
         if not len(status_find):
             return (False, 'Wrong ssv status reply')
@@ -545,29 +535,16 @@ class SsvNodeChecker(BaseNodeCheckerSSH):
 
 class MinimaDockerNodeChecker(BaseNodeCheckerSSH):
 
-    def __init__(self, ip, username, password, screen, sudo):
+    def __init__(self, ip: str, username: str, password: str, screen: bool, sudo: bool):
         self.cmds = [r'docker ps --filter status=running --format "table {{.Names}}\t{{.Status}}"']
         super().__init__(ip, username, password, screen, True)
 
-    def parse_unique_answer(self, answer):
+    def parse_unique_answer(self, answer: list[str]):
 
         status_find = list(filter(lambda x: 'minima9001' in x, answer))
         if not len(status_find):
             return (False, 'Wrong minima status reply')
         status = status_find[0].strip()
-        # if status != 'true':
-        #     return (False, f'Wrong minima status reply, {status}')
-
-        # version_find = list(filter(lambda x: '"version":' in x, answer))
-        # if not len(version_find):
-        #     return (False, 'Wrong minima version reply')
-        # version = version_find[0].strip().split(':')[-1][:-1]
-
-        # coins_rewards = list(filter(lambda x: '"coins":' in x, answer))
-        # coins_reward = 0
-        # if len(coins_rewards):
-        #     coins_reward = coins_rewards[0].strip().split(':')[-1][:-1]
-
         return (True, f'Node is OK, status {status}', 0)
 
 
