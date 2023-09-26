@@ -1,7 +1,7 @@
 from typing import Union, Optional, Dict, List
 
-import telegram
-from telegram import MessageEntity, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import MessageEntity, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, Bot, \
+    error as telegram_error
 
 from dtb.settings import TELEGRAM_TOKEN
 from tgbot.models import User
@@ -45,14 +45,14 @@ def _from_celery_entities_to_entities(celery_entities: Optional[List[Dict]] = No
 def _send_message(
     user_id: Union[str, int],
     text: str,
-    parse_mode: Optional[str] = telegram.ParseMode.HTML,
+    parse_mode: Optional[str] = ParseMode.HTML,
     reply_markup: Optional[List[List[Dict]]] = None,
     reply_to_message_id: Optional[int] = None,
     disable_web_page_preview: Optional[bool] = None,
     entities: Optional[List[MessageEntity]] = None,
     tg_token: str = TELEGRAM_TOKEN,
 ) -> bool:
-    bot = telegram.Bot(tg_token)
+    bot = Bot(tg_token)
     try:
         m = bot.send_message(
             chat_id=user_id,
@@ -63,7 +63,7 @@ def _send_message(
             disable_web_page_preview=disable_web_page_preview,
             entities=entities,
         )
-    except telegram.error.Unauthorized:
+    except telegram_error.Unauthorized:
         print(f"Can't send message to {user_id}. Reason: Bot was stopped.")
         User.objects.filter(user_id=user_id).update(is_blocked_bot=True)
         success = False
