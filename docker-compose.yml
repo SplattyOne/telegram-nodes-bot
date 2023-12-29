@@ -3,7 +3,7 @@ version: "3.8"
 services:
 
   web:
-    image: tomatto/djnago-telegram-bot:latest
+    image: tomatto/django-telegram-bot:latest
     container_name: dtb_django
     command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8777"
     volumes:
@@ -18,7 +18,7 @@ services:
     restart: unless-stopped
 
   bot:
-    image: tomatto/djnago-telegram-bot:latest
+    image: tomatto/django-telegram-bot:latest
     container_name: dtb_bot
     command: python run_pooling.py
     env_file:
@@ -31,7 +31,7 @@ services:
     restart: unless-stopped
 
   celery:
-    image: tomatto/djnago-telegram-bot:latest
+    image: tomatto/django-telegram-bot:latest
     container_name: dtb_celery
     command: celery -A dtb worker --loglevel=INFO
     volumes:
@@ -46,7 +46,7 @@ services:
     restart: unless-stopped
 
   celery-beat:
-    image: tomatto/djnago-telegram-bot:latest
+    image: tomatto/django-telegram-bot:latest
     container_name: dtb_beat
     command: celery -A dtb beat -l info --scheduler django_celery_beat.schedulers.DatabaseScheduler
     volumes:
