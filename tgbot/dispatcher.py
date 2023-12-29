@@ -1,26 +1,30 @@
 """
     Telegram event handlers
 """
-import sys
 import logging
+import sys
 from typing import Dict
 
 import telegram.error
-from telegram import Bot, Update, BotCommand
-from telegram.ext import (
-    Updater, Dispatcher, Filters,
-    CommandHandler, MessageHandler,
-    CallbackQueryHandler,
-)
+from telegram import Bot, BotCommand, Update
+from telegram.ext import CallbackQueryHandler, CommandHandler, Dispatcher, \
+    Updater
 
 from dtb.celery import app  # event processing in async mode
-from dtb.settings import TELEGRAM_TOKEN, DEBUG
-
-from tgbot.handlers.utils import files, error
+from dtb.settings import DEBUG, TELEGRAM_TOKEN
 from tgbot.handlers.admin import handlers as admin_handlers
 from tgbot.handlers.onboarding import handlers as onboarding_handlers
+
 # from tgbot.handlers.broadcast_message import handlers as broadcast_handlers
-from tgbot.handlers.onboarding.manage_data import ADD_CHECKER_BUTTON, CHECK_CACHED_BUTTON, DELETE_CHECKER_BUTTON, CHECK_NOW_BUTTON, LIST_CHECKERS_BUTTON
+from tgbot.handlers.onboarding.manage_data import (
+    ADD_CHECKER_BUTTON,
+    CHECK_CACHED_BUTTON,
+    CHECK_NOW_BUTTON,
+    DELETE_CHECKER_BUTTON,
+    LIST_CHECKERS_BUTTON,
+)
+from tgbot.handlers.utils import error
+
 # from tgbot.handlers.broadcast_message.manage_data import CONFIRM_DECLINE_BROADCAST
 # from tgbot.handlers.broadcast_message.static_text import broadcast_command
 
@@ -54,7 +58,8 @@ def setup_dispatcher(dp):
 
     # broadcast message
     # dp.add_handler(
-    #     MessageHandler(Filters.regex(rf'^{broadcast_command}(/s)?.*'), broadcast_handlers.broadcast_command_with_message)
+    #     MessageHandler(Filters.regex(rf'^{broadcast_command}(/s)?.*'),
+    #     broadcast_handlers.broadcast_command_with_message)
     # )
     # dp.add_handler(
     #     CallbackQueryHandler(broadcast_handlers.broadcast_decision_handler, pattern=f"^{CONFIRM_DECLINE_BROADCAST}")
@@ -84,14 +89,14 @@ def setup_dispatcher(dp):
 
 
 def run_pooling():
-    """ Run bot in pooling mode """
+    """Run bot in pooling mode"""
     updater = Updater(TELEGRAM_TOKEN, use_context=True)
 
     dp = updater.dispatcher
     dp = setup_dispatcher(dp)
 
     bot_info = Bot(TELEGRAM_TOKEN).get_me()
-    bot_link = f"https://t.me/" + bot_info["username"]
+    bot_link = "https://t.me/" + bot_info["username"]
 
     print(f"Pooling of '{bot_link}' started")
     # it is really useful to send '👋' emoji to developer
@@ -107,7 +112,7 @@ bot = Bot(TELEGRAM_TOKEN)
 try:
     TELEGRAM_BOT_USERNAME = bot.get_me()["username"]
 except telegram.error.Unauthorized:
-    logging.error(f"Invalid TELEGRAM_TOKEN.")
+    logging.error("Invalid TELEGRAM_TOKEN.")
     sys.exit(1)
 
 
@@ -119,24 +124,24 @@ def process_telegram_event(update_json):
 
 def set_up_commands(bot_instance: Bot) -> None:
     langs_with_commands: Dict[str, Dict[str, str]] = {
-        'en': {
-            'start': 'Start bot 🚀',
-            'cached': 'Get all nodes statuses 🚀',
-            'now': 'Check all nodes statuses 🚀',
-            'list': 'List all nodes 📊',
-            'add': 'Add node for check 📊',
-            'delete': 'Delete node for check 📊'
+        "en": {
+            "start": "Start bot 🚀",
+            "cached": "Get all nodes statuses 🚀",
+            "now": "Check all nodes statuses 🚀",
+            "list": "List all nodes 📊",
+            "add": "Add node for check 📊",
+            "delete": "Delete node for check 📊",
             # 'stats': 'Statistics of bot 📊'
         },
-        'ru': {
-            'start': 'Start bot 🚀',
-            'cached': 'Get all nodes statuses 🚀',
-            'now': 'Check all nodes statuses 🚀',
-            'list': 'List all nodes 📊',
-            'add': 'Add node for check 📊',
-            'delete': 'Delete node for check 📊'
+        "ru": {
+            "start": "Start bot 🚀",
+            "cached": "Get all nodes statuses 🚀",
+            "now": "Check all nodes statuses 🚀",
+            "list": "List all nodes 📊",
+            "add": "Add node for check 📊",
+            "delete": "Delete node for check 📊",
             # 'stats': 'Statistics of bot 📊'
-        }
+        },
     }
 
     bot_instance.delete_my_commands()
@@ -145,7 +150,7 @@ def set_up_commands(bot_instance: Bot) -> None:
             language_code=language_code,
             commands=[
                 BotCommand(command, description) for command, description in langs_with_commands[language_code].items()
-            ]
+            ],
         )
 
 
