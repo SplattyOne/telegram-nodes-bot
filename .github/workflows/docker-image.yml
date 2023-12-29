@@ -26,4 +26,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: tomatto/django-telegram-bot:latest
+          tags: |
+            tomatto/django-telegram-bot:web
+            tomatto/django-telegram-bot:$(date +%s)
