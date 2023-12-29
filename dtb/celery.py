@@ -20,16 +20,14 @@ app.conf.enable_utc = False
 app.conf.beat_schedule = {
     'check-nodes-every-5-minutes': {
         'task': 'nodes.tasks.check_nodes_task',
-        'schedule': crontab(minute='*/5'),  # change to `crontab(minute=0, hour=0)` if you want it to run daily at midnight
+        'schedule': crontab(minute='*/5'),
     },
     'send-nodes-at-9-00': {
         'task': 'nodes.tasks.send_nodes_status_task',
-        'schedule': crontab(hour=9, minute=0),  # change to `crontab(minute=0, hour=0)` if you want it to run daily at midnight
+        'schedule': crontab(hour=9, minute=0),
     },
     'send-nodes-guru-updates-every-15-minutes': {
         'task': 'nodes.tasks.send_nodes_guru_updates',
-        'schedule': crontab(minute='*/15'),  # change to `crontab(minute=0, hour=0)` if you want it to run daily at midnight
+        'schedule': crontab(minute='*/15'),
     },
 }
-
-    

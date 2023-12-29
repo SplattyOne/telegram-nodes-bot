@@ -683,7 +683,7 @@ def check_nodes_now(user_id, send_changes=False):
         node.save()
 
         # Collect all rewards
-        if not node.node_type in node_rewards:
+        if node.node_type not in node_rewards:
             node_rewards[node.node_type] = 0
         node_rewards[node.node_type] += node.last_reward_value
 
@@ -720,7 +720,7 @@ def check_nodes_cached(user_id):
         nodes_status += f'{index+1}. {node.node_type} {node_description} {node_status}\n '
 
         # Collect all rewards
-        if not node.node_type in node_rewards:
+        if node.node_type not in node_rewards:
             node_rewards[node.node_type] = 0
         node_rewards[node.node_type] += node.last_reward_value
 
