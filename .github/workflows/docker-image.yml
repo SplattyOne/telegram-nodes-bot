@@ -19,6 +19,7 @@ jobs:
           images: tomatto/django-telegram-bot
           tags: |
             type=raw,value=latest
+            type=raw,value=unraid
             type=raw,value={{date 'YYYYMMDD'}}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
